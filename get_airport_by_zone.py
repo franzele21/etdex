@@ -56,8 +56,10 @@ list
     Airplanes of the file
 """
     conn = create_connection(file)
-    airplanes = query(conn, "SELECT * FROM \"INVISBLE_AIRPLANE\" WHERE 1;").fetchall()
+    airplanes = query(conn, "SELECT * FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
 
+    airplanes = airplanes.fetchall() if not isinstance(airplanes, type(None)) else []
+    
     return airplanes
 
 
