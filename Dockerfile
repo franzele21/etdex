@@ -1,6 +1,6 @@
 #syntax=docker/dockerfile:1
 
-FROM python:latest
+FROM python:3.10
 
 WORKDIR /etdex
 
