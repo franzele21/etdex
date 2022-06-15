@@ -8,6 +8,7 @@ date
 import requests
 import json
 import time
+import sys
 
 # path to the id for the ppr api
 PPR_AUTH_PATH = "auth_ppr.json"
@@ -23,9 +24,19 @@ OUTPUT_FILE = "output_ppr.json"
 
 # we will first retrieve the id and password for the PPR API and for 
 # the airport API
-with open(PPR_AUTH_PATH) as file:
-    content = json.loads(file.read())
-    user_ppr, password_ppr = content["user"], content["password"]
+try:
+    with open(PPR_AUTH_PATH) as file:
+        content = json.loads(file.read())
+        user_ppr, password_ppr = content["user"], content["password"]
+except:
+    print(f"""The file {PPR_AUTH_PATH} doesn't exist.
+In this file, you need to have the data like this:
+{{
+    "user": "<username>",
+    "password": "<password>"
+}}
+""")
+    sys.exit(1)
 
 with open(AIRPORT_AUTH_PATH) as file:
     content = json.loads(file.read())
