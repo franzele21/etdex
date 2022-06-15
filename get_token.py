@@ -9,8 +9,8 @@ try:
 	with open(AUTH_FILE) as file:
 		payload = file.read()
 except FileNotFoundError:
-	print(f"""Error: the {AUTH_FILE} don't exists. 
-In this file, you need to have the data ordered like this:
+	print(f"""Error: the {AUTH_FILE} doesn't exist. 
+In this file, you need to have the data like this:
 {{
 	"username": "<auth_username>",
 	"password": "<auth_password>"
