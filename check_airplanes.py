@@ -39,7 +39,12 @@ while True:
                             PRIMARY KEY ("apRegis") );
                     """)
 
+    table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
 
+    if table_exists[0][0] == 0:
+        time.sleep(30)
+        continue
+    
     source_list = query(conn, "SELECT DISTINCT apSource FROM \"AIRPLANE\" WHERE 1;").fetchall()
     source_list = [item[0] for item in source_list]
 
