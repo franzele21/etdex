@@ -33,13 +33,16 @@ def get_access_token():
 
 
 def previous_been_read(output_file):
-    with open(output_file) as file:
-        content = json.loads(file.read())
-        if content["been_read"]:
-            return (True, 0)
-        else:
-            max_id = max([int(id) for id in content["new_aftn"].keys()])
-            return (False, max_id)
+    try:
+        with open(output_file) as file:
+            content = json.loads(file.read())
+            if content["been_read"]:
+                return (True, 0)
+            else:
+                max_id = max([int(id) for id in content["new_aftn"].keys()])
+                return (False, max_id)
+    except FileNotFoundError:
+        return (True, 0)
 
 
 def traffic_search(access):
