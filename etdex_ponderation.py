@@ -2,6 +2,7 @@ import jellyfish
 import json
 import time
 import os
+from os.path import exists
 from functions import *
 from sqlite3 import Error
 from datetime import datetime
@@ -198,14 +199,23 @@ def get_aftn(aftn_message):
 with open(PONDERATION_FILE) as ponderation_file:
     ponderation = json.loads(ponderation_file.read())
 
-with open(POSSIBLE_LANDINGS_ADSB_FILE) as tracking_file:
-    tracking = json.loads(tracking_file.read())
+if exists(POSSIBLE_LANDINGS_ADSB_FILE):
+    with open(POSSIBLE_LANDINGS_ADSB_FILE) as tracking_file:
+        tracking = json.loads(tracking_file.read())
+else:
+    tracking = []
 
-with open(PPR_FILE) as ppr_file:
-    all_ppr = json.loads(ppr_file.read())
+if exists(PPR_FILE):
+    with open(PPR_FILE) as ppr_file:
+        all_ppr = json.loads(ppr_file.read())
+else:
+    all_ppr = []
 
-with open(AFTN_FILE) as aftn_file:
-    aftn_data = json.loads(aftn_file.read())
+if exists(AFTN_FILE):
+    with open(AFTN_FILE) as aftn_file:
+        aftn_data = json.loads(aftn_file.read())
+else:
+    aftn_data = {"been_read": True}
 
 while True:
     conn = create_connection(DATABASE_PATH)
