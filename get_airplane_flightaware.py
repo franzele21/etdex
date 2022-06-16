@@ -16,6 +16,7 @@ from functions import *
 DATABASE_PATH = "airplane.db"
 # api, from where the airplanes comes
 SOURCE = "FlightAware"
+AUTH_FILE = "auth_api.json"
 
 
 def to_dict_by_callsign(airplane_list: list, callsign: str|int, 
@@ -94,11 +95,16 @@ dict
 
     return new_dict
 
+with open(AUTH_FILE) as file:
+    content = json.loads(file.write())[SOURCE]
+    name = content["name"]
+    api_key = content["key"]
+
 while True:
 
     headers = {
         'Accept': 'application/json; charset=UTF-8',
-        'x-apikey': '4rgiIOr0m9WYwnfqeLb7P3Vcdl1uADId',
+        name: api_key,
     }
 
     params = {
