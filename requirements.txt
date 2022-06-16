@@ -1,0 +1,3 @@
+# Third-party module requirement for ETDEX
+requests
+jellyfish
