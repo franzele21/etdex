@@ -1,0 +1,16 @@
+{
+	"airTracker": {
+		"default": 85
+	},
+	"PPR": {
+		"default": 70
+	},
+	"AFTN": {
+		"default": 100
+	},
+	"landingTracker": {
+		"audio": 70,
+		"photo": 70,
+		"combination": 90
+	}
+}
