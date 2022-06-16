@@ -10,6 +10,8 @@ import json
 import time
 import sys
 
+print("get_ppr: initialization")
+
 # path to the id for the ppr api
 PPR_AUTH_PATH = "auth_ppr.json"
 # path to the id for the airport api
@@ -51,6 +53,7 @@ airports = json.loads(response.text)["data"]
 airports_name = [airport["name"] for airport in airports]
 
 while True:
+    print("get_ppr: begin of the routine")
 
     # we retrieve the PPRs
     # in the query, we give which status we want, and from when to when
@@ -108,4 +111,5 @@ while True:
     with open(OUTPUT_FILE, "w+") as file:
         file.write(json.dumps(new_ppr, indent=2))
 
+    print("get_ppr: end of the routine")
     time.sleep(MAXIMUM_PPR_OLD * 60 * 60 )

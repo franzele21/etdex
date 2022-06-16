@@ -7,6 +7,8 @@ from functions import *
 from sqlite3 import Error
 from datetime import datetime
 
+print("etdex_ponderation: initialization")
+
 # forces this program to be in the UTC timezone
 os.environ["TZ"] = "UTC"
 time.tzset()
@@ -218,6 +220,8 @@ else:
     aftn_data = {"been_read": True}
 
 while True:
+    print("etdex_ponderation: begin of the routine")
+
     conn = create_connection(DATABASE_PATH)
 
     # check if the table UNTREATED_TABLE exists
@@ -446,4 +450,6 @@ while True:
                                 AND ABS(tdTime - '{landing_time}') <= '{delta_landing}';
                             """)
     conn.close()
+
+    print("etdex_ponderation: end of the routine")
     time.sleep(1800)

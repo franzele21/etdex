@@ -13,6 +13,8 @@ from functions import *
 from airplane_zone import create_zone
 from in_polygon import is_inside_polygon
 
+print("get_airport_by_zone: initialization")
+
 # database, where the airplanes are registered
 AIRPLANE_DATABASE = "airplane.db"
 # the path of the output file
@@ -95,6 +97,8 @@ airports = json.loads(response.text)["data"]
 airports = filter_airports(airports)
 
 while True:
+    print("get_airport_by_zone: begin of the routine")
+
     # get the airplanes that are inivisble by the ADS-B system
     airplanes = format_airplanes(get_airplanes(AIRPLANE_DATABASE))
 
@@ -131,4 +135,5 @@ while True:
     with open(OUTPUT_FILE, "w+") as file:
         file.write(json.dumps(airport_in_zone, indent=2))
 
+    print("get_airport_by_zone: end of the routine")
     time.sleep(180)

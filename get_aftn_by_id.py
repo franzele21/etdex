@@ -3,6 +3,8 @@ import json
 import os
 import time
 
+print("get_aftn_by_id: initialization")
+
 ACCESS_TOKEN_FILE = "access_token.json"
 OUTPUT_FILE = "data_traffic.json"
 MAX_ID_FILE = "max_id.txt"
@@ -88,6 +90,8 @@ def traffic_search(access):
 
 access = get_access_token()
 while True:
+    print("get_aftn_by_id: begin of the routine")
+
     if time.time() > int(access["expiration_date"]):
         print("getting a new key...")
         os.system("python3 get_token.py")
@@ -97,4 +101,5 @@ while True:
 
     traffic_search(access)
 
+    print("get_aftn_by_id: end of the routine")
     time.sleep(3600)
