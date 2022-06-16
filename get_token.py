@@ -2,7 +2,7 @@ import requests
 import json
 import sys
 
-AUTH_FILE = "auth.json"
+AUTH_FILE = "auth_aftn.json"
 OUTPUT_FILE = "access_token.json"
 
 try:
