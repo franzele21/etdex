@@ -97,14 +97,14 @@ dict
 
 with open(AUTH_FILE) as file:
     content = json.loads(file.write())[SOURCE]
-    name = content["name"]
+    user = content["user"]
     api_key = content["key"]
 
 while True:
 
     headers = {
         'Accept': 'application/json; charset=UTF-8',
-        name: api_key,
+        user: api_key,
     }
 
     params = {
