@@ -12,7 +12,6 @@ from datetime import datetime
 import requests
 from functions import *
 
-print("get_airplane_flightaware: initialization")
 
 # path to the database
 DATABASE_PATH = "airplane.db"
@@ -20,6 +19,7 @@ DATABASE_PATH = "airplane.db"
 SOURCE = "FlightAware"
 AUTH_FILE = "auth_api.json"
 
+print(f"get_airplane_{SOURCE}: initialization")
 
 def to_dict_by_callsign(airplane_list: list, callsign: str, 
                         latitude: int, longitude: int, 
@@ -103,7 +103,7 @@ with open(AUTH_FILE) as file:
     api_key = content["key"]
 
 while True:
-    print("get_airplane_flightaware: begin of the routine")
+    print(f"get_airplane_{SOURCE}: begin of the routine")
 
     headers = {
         'Accept': 'application/json; charset=UTF-8',
@@ -197,9 +197,8 @@ while True:
                                     WHERE apRegis = '{airplane_name}'
                                     AND apSource = '{SOURCE}';
                                 """)
-        print("added data")
         conn.close()
 
-    print("get_airplane_flightaware: end of the routine")
+    print(f"get_airplane_{SOURCE}: end of the routine")
     # it will pause 30 seconds, so we won't have any problem with the APIs
     time.sleep(30)
