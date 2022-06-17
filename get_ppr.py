@@ -57,14 +57,17 @@ while True:
 
     # we retrieve the PPRs
     # in the query, we give which status we want, and from when to when
-    queries = {
-        "status": PPR_STATUS,
-        "beforeTimestamp": int(time.time()),
-        "afterTimestamp": int(time.time()) - (MAXIMUM_PPR_OLD * 60 * 60)}
+    search_parameters = {
+        "status": "new",
+        "beforeTimestamp": str(int(time.time())),
+        "afterTimestamp": str(int(time.time()) - (MAXIMUM_PPR_OLD * 60 * 60))
+    }
     response = requests.get("https://dev1.avdb.aerops.com/public/ppr-data",
-                            params=queries,
-                            auth=(user_ppr, password_ppr))
+                        headers=search_parameters,
+                        auth=(user_ppr, password_ppr))
 
+    print(response.text)
+    print(search_parameters["afterTimestamp"], search_parameters["beforeTimestamp"], (int(search_parameters["beforeTimestamp"])-int(search_parameters["afterTimestamp"]))/60/60)
     ## if the auth weren't correct, it will display an error 401
     if response.text != "":
         multiple_ppr = json.loads(response.text)
