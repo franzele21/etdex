@@ -21,10 +21,10 @@ SOURCE = "FlightAware"
 AUTH_FILE = "auth_api.json"
 
 
-def to_dict_by_callsign(airplane_list: list, callsign: str|int, 
-                        latitude: str|int, longitude: str|int, 
-                        heading: str|int, geo_altitude: str|int,
-                        velocity: str|int, airplane_time: str|int, 
+def to_dict_by_callsign(airplane_list: list, callsign: str, 
+                        latitude: int, longitude: int, 
+                        heading: int, geo_altitude: int,
+                        velocity: int, airplane_time: int, 
                         ) -> dict:
     """
 Returns a formated dictionary of airplanes, with they're callsign as key
@@ -98,7 +98,7 @@ dict
     return new_dict
 
 with open(AUTH_FILE) as file:
-    content = json.loads(file.write())[SOURCE]
+    content = json.loads(file.read())[SOURCE]
     user = content["user"]
     api_key = content["key"]
 
