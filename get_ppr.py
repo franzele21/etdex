@@ -19,7 +19,7 @@ AIRPORT_AUTH_PATH = "auth_avdb.json"
 # the PPR needs to be younger than this variable in hour
 MAXIMUM_PPR_OLD = 2
 # the status of the ppr
-PPR_STATUS = "new"
+PPR_STATUS = "confirmed"
 # output file, where the PPR is going to be kept
 OUTPUT_FILE = "output_ppr.json"
 
@@ -55,15 +55,19 @@ airports_name = [airport["name"] for airport in airports]
 while True:
     print("get_ppr: begin of the routine")
 
+    ppr_max_time = str(int(time.time()))
+    ppr_min_time = str(int(time.time()) - (MAXIMUM_PPR_OLD * 60 * 60))
+
     # we retrieve the PPRs
     # in the query, we give which status we want, and from when to when
     search_parameters = {
-        "status": PPR_AUTH_PATH,
-        "beforeTimestamp": str(int(time.time())),
-        "afterTimestamp": str(int(time.time()) - (MAXIMUM_PPR_OLD * 60 * 60))
+        "status": PPR_STATUS,
+        "beforeTimestamp": ppr_max_time,
+        "afterTimestamp": ppr_min_time
     }
+
     response = requests.get("https://dev1.avdb.aerops.com/public/ppr-data",
-                        headers=search_parameters,
+                        params=search_parameters,
                         auth=(user_ppr, password_ppr))
 
     ## if the auth weren't correct, it will display an error 401
