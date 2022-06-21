@@ -72,7 +72,6 @@ dict
         if isinstance(geo_altitude_value, type(None)):
             continue
         geo_altitude_value *= 0.3048    # to convert from feet to meters
-        geo_altitude_value *= 100       # to convert from meters to hundreds meters
 
         velocity_value = i[velocity] if not isinstance(i[velocity], str) else eval(i[velocity])
         if isinstance(velocity_value, type(None)):
