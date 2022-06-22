@@ -1,3 +1,7 @@
+"""
+CREDITS: https://www.geeksforgeeks.org/how-to-check-if-a-given-point-lies-inside-a-polygon/
+"""
+
 INT_MAX = 10000
 
 # Given three collinear points p, q, r,
