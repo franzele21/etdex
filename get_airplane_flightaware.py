@@ -19,7 +19,7 @@ DATABASE_PATH = "airplane.db"
 SOURCE = "FlightAware"
 AUTH_FILE = "auth_api.json"
 
-print(f"get_airplane_{SOURCE}: initialization")
+print(f"{datetime.now().strftime('%H:%M:%S')} | get_airplane_{SOURCE}: initialization")
 
 def to_dict_by_callsign(airplane_list: list, callsign: str, 
                         latitude: int, longitude: int, 
@@ -103,7 +103,7 @@ with open(AUTH_FILE) as file:
     api_key = content["key"]
 
 while True:
-    print(f"get_airplane_{SOURCE}: begin of the routine")
+    print(f"{datetime.now().strftime('%H:%M:%S')} | get_airplane_{SOURCE}: begin of the routine")
 
     headers = {
         'Accept': 'application/json; charset=UTF-8',
@@ -199,6 +199,6 @@ while True:
                                 """)
         conn.close()
 
-    print(f"get_airplane_{SOURCE}: end of the routine")
+    print(f"{datetime.now().strftime('%H:%M:%S')} | get_airplane_{SOURCE}: end of the routine")
     # it will pause 30 seconds, so we won't have any problem with the APIs
     time.sleep(30)

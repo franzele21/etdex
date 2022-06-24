@@ -9,8 +9,9 @@ import requests
 import json
 import time
 import sys
+from datetime import datetime
 
-print("get_ppr: initialization")
+print(f"{datetime.now().strftime('%H:%M:%S')} | get_ppr: initialization")
 
 # path to the id for the ppr api
 PPR_AUTH_PATH = "auth_ppr.json"
@@ -53,7 +54,7 @@ airports = json.loads(response.text)["data"]
 airports_name = [airport["name"] for airport in airports]
 
 while True:
-    print("get_ppr: begin of the routine")
+    print(f"{datetime.now().strftime('%H:%M:%S')} | get_ppr: begin of the routine")
 
     ppr_max_time = str(int(time.time()))
     ppr_min_time = str(int(time.time()) - (MAXIMUM_PPR_OLD * 60 * 60))
@@ -116,5 +117,5 @@ while True:
     with open(OUTPUT_FILE, "w+") as file:
         file.write(json.dumps(new_ppr, indent=2))
 
-    print("get_ppr: end of the routine")
+    print(f"{datetime.now().strftime('%H:%M:%S')}|  get_ppr: end of the routine")
     time.sleep(MAXIMUM_PPR_OLD * 60 * 60 )

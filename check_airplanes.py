@@ -6,8 +6,9 @@ times on different API
 
 import time
 from functions import *
+from datetime import datetime
 
-print("check_airplanes: initialization")
+print(f"{datetime.now().strftime('%H:%M:%S')} | check_airplanes: initialization")
 
 # final variable of how many minutes it takes to consider, that an
 # airplane is really disappeared from the radars (in minutes)
@@ -19,7 +20,7 @@ DELAY_DELETE = 10
 DATABASE_PATH = "airplane.db"
 
 while True:
-    print("check_airplanes: begin of the routine")
+    print(f"{datetime.now().strftime('%H:%M:%S')} | check_airplanes: begin of the routine")
 
     conn = create_connection(DATABASE_PATH)
     table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'INVISIBLE_AIRPLANE';").fetchall()
@@ -107,5 +108,5 @@ while True:
 
     conn.close()
 
-    print("check_airplanes: end of the routine")
+    print(f"{datetime.now().strftime('%H:%M:%S')} | check_airplanes: end of the routine")
     time.sleep(30)
