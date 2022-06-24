@@ -7,7 +7,7 @@ from functions import *
 from sqlite3 import Error
 from datetime import datetime
 
-print("etdex_ponderation: initialization")
+print(f"{datetime.now().strftime('%H:%M:%S')} | etdex_ponderation: initialization")
 
 # forces this program to be in the UTC timezone
 os.environ["TZ"] = "UTC"
@@ -201,26 +201,26 @@ def get_aftn(aftn_message):
 with open(PONDERATION_FILE) as ponderation_file:
     ponderation = json.loads(ponderation_file.read())
 
-if exists(POSSIBLE_LANDINGS_ADSB_FILE):
-    with open(POSSIBLE_LANDINGS_ADSB_FILE) as tracking_file:
-        tracking = json.loads(tracking_file.read())
-else:
-    tracking = []
-
-if exists(PPR_FILE):
-    with open(PPR_FILE) as ppr_file:
-        all_ppr = json.loads(ppr_file.read())
-else:
-    all_ppr = []
-
-if exists(AFTN_FILE):
-    with open(AFTN_FILE) as aftn_file:
-        aftn_data = json.loads(aftn_file.read())
-else:
-    aftn_data = {"been_read": True}
-
 while True:
-    print("etdex_ponderation: begin of the routine")
+    print(f"{datetime.now().strftime('%H:%M:%S')} | etdex_ponderation: begin of the routine")
+
+    if exists(POSSIBLE_LANDINGS_ADSB_FILE):
+        with open(POSSIBLE_LANDINGS_ADSB_FILE) as tracking_file:
+            tracking = json.loads(tracking_file.read())
+    else:
+        tracking = []
+
+    if exists(PPR_FILE):
+        with open(PPR_FILE) as ppr_file:
+            all_ppr = json.loads(ppr_file.read())
+    else:
+        all_ppr = []
+
+    if exists(AFTN_FILE):
+        with open(AFTN_FILE) as aftn_file:
+            aftn_data = json.loads(aftn_file.read())
+    else:
+        aftn_data = {"been_read": True}
 
     conn = create_connection(DATABASE_PATH)
 
@@ -230,6 +230,7 @@ while True:
 
     # if the count is equal to 0, we create both tables
     if table_exists == 0:
+        print(f"{datetime.now().strftime('%H:%M:%S')} | etdex_ponderation: creating database table")
         query(conn, """
                     CREATE TABLE "UNTREATED_DATA" ( 
                         "udId" INTEGER NOT NULL,
@@ -451,5 +452,5 @@ while True:
                             """)
     conn.close()
 
-    print("etdex_ponderation: end of the routine")
+    print(f"{datetime.now().strftime('%H:%M:%S')} | etdex_ponderation: end of the routine")
     time.sleep(1800)
