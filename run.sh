@@ -1,6 +1,6 @@
 #!/bin/bash
 
-exec python3 -u get_airplane_flightaware.py &
+#exec python3 -u get_airplane_flightaware.py &
 exec python3 -u get_airplane_jetvision.py &
 sleep 10
 exec python3 -u check_airplanes.py &
