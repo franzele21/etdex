@@ -25,6 +25,23 @@ while True:
     print(f"{datetime.now().strftime('%H:%M:%S')} | check_airplanes: begin of the routine")
 
     conn = create_connection(DATABASE_PATH)
+
+    db_status = query(conn, """
+                                INSERT INTO "INVISIBLE_AIRPLANE" 
+                                VALUES ("Lorem ipsum dolor sit amet consectetur adipiscing elit", "", "", "", "", "", "", "");
+                            """)
+    query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
+    while not db_status:
+        print(f"{datetime.now().strftime('%H:%M:%S')} | check_airplanes: waiting for the {DATABASE_PATH} database to be unlocked")
+        
+        time.sleep(5)
+        db_status = query(conn, """
+                                    INSERT INTO "INVISIBLE_AIRPLANE" 
+                                    VALUES ("Lorem ipsum dolor sit amet consectetur adipiscing elit", "", "", "", "", "", "", "");
+                                """)
+        query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
+
+    
     table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'INVISIBLE_AIRPLANE';").fetchall()
 
     if table_exists[0][0] == 0:
@@ -52,20 +69,6 @@ while True:
         time.sleep(30)
         continue
 
-    db_status = query(conn, """
-                                INSERT INTO "INVISIBLE_AIRPLANE" 
-                                VALUES ("Lorem ipsum dolor sit amet consectetur adipiscing elit", "", "", "", "", "", "", "");
-                            """)
-    query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
-    while not db_status:
-        print(f"{datetime.now().strftime('%H:%M:%S')} | check_airplanes: waiting for the {DATABASE_PATH} database to be unlocked")
-        
-        time.sleep(5)
-        db_status = query(conn, """
-                                    INSERT INTO "INVISIBLE_AIRPLANE" 
-                                    VALUES ("Lorem ipsum dolor sit amet consectetur adipiscing elit", "", "", "", "", "", "", "");
-                                """)
-        query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
 
     source_list = query(conn, "SELECT DISTINCT apSource FROM \"AIRPLANE\" WHERE 1;").fetchall()
     source_list = [item[0] for item in source_list]
