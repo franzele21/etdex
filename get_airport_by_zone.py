@@ -9,17 +9,20 @@ JSON file the airplanes, and on which airports it could have landed.
 import requests
 import json
 import time
+import os
 from functions import *
 from datetime import datetime
 from airplane_zone import create_zone
 from in_polygon import is_inside_polygon
 
-print(f"{datetime.now().strftime('%H:%M:%S')} | get_airport_by_zone: initialization")
 
 # database, where the airplanes are registered
 AIRPLANE_DATABASE = "airplane.db"
 # the path of the output file
 OUTPUT_FILE = "airport_by_zone.json"
+FILENAME = os.path.basename(__file__)
+
+print_context(FILENAME, "initialization")
 
 def filter_airports(airports: list) -> list:
     """
@@ -98,7 +101,7 @@ airports = json.loads(response.text)["data"]
 airports = filter_airports(airports)
 
 while True:
-    print(f"{datetime.now().strftime('%H:%M:%S')} | get_airport_by_zone: begin of the routine")
+    print_context(FILENAME, "begin of the routine")
 
     # get the airplanes that are inivisble by the ADS-B system
     airplanes = format_airplanes(get_airplanes(AIRPLANE_DATABASE))
@@ -136,5 +139,5 @@ while True:
     with open(OUTPUT_FILE, "w+") as file:
         file.write(json.dumps(airport_in_zone, indent=2))
 
-    print(f"{datetime.now().strftime('%H:%M:%S')} | get_airport_by_zone: end of the routine")
+    print_context(FILENAME, "end of the routine")
     time.sleep(180)

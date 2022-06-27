@@ -7,7 +7,6 @@ from functions import *
 from sqlite3 import Error
 from datetime import datetime
 
-print(f"{datetime.now().strftime('%H:%M:%S')} | etdex_ponderation: initialization")
 
 # forces this program to be in the UTC timezone
 os.environ["TZ"] = "UTC"
@@ -24,6 +23,9 @@ PONDERATION_FILE = "ponderation.json"
 POSSIBLE_LANDINGS_ADSB_FILE = "airport_by_zone.json"
 PPR_FILE = "output_ppr.json"
 AFTN_FILE = "data_traffic.json"
+FILENAME = os.path.basename(__file__)
+
+print_context(FILENAME, "initialization")
 
 
 def push_id(list_: list) -> list:
@@ -202,7 +204,7 @@ with open(PONDERATION_FILE) as ponderation_file:
     ponderation = json.loads(ponderation_file.read())
 
 while True:
-    print(f"{datetime.now().strftime('%H:%M:%S')} | etdex_ponderation: begin of the routine")
+    print_context(FILENAME ,"begin of the routine")
 
     if exists(POSSIBLE_LANDINGS_ADSB_FILE):
         with open(POSSIBLE_LANDINGS_ADSB_FILE) as tracking_file:
@@ -230,7 +232,7 @@ while True:
 
     # if the count is equal to 0, we create both tables
     if table_exists == 0:
-        print(f"{datetime.now().strftime('%H:%M:%S')} | etdex_ponderation: creating database table")
+        print_context(FILENAME, "creating database table")
         query(conn, """
                     CREATE TABLE "UNTREATED_DATA" ( 
                         "udId" INTEGER NOT NULL,
@@ -452,5 +454,5 @@ while True:
                             """)
     conn.close()
 
-    print(f"{datetime.now().strftime('%H:%M:%S')} | etdex_ponderation: end of the routine")
+    print_context(FILENAME, "end of the routine")
     time.sleep(1800)

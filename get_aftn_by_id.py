@@ -3,14 +3,17 @@ import json
 import os
 import time
 from datetime import datetime
+from functions import print_context
 
-print(f"{datetime.now().strftime('%H:%M:%S')} | get_aftn_by_id: initialization")
 
 ACCESS_TOKEN_FILE = "access_token.json"
 OUTPUT_FILE = "data_traffic.json"
 MAX_ID_FILE = "max_id.txt"
 with open(MAX_ID_FILE) as file:
     MAX_ID = int(file.read())
+FILENAME = os.path.basename(__file__)
+
+print_context(FILENAME, "initialization")
 
 def read_token_access_file(access_file):
     with open(access_file) as file:
@@ -70,7 +73,7 @@ def traffic_search(access):
         else:
             is_not_max = False
 
-    print(queries["id"])
+    print_context(FILENAME, F"last id = {queries['id']}")
     with open(MAX_ID_FILE, "w") as file:
         file.write(str(queries["id"]))
 
@@ -91,7 +94,7 @@ def traffic_search(access):
 
 access = get_access_token()
 while True:
-    print(f"{datetime.now().strftime('%H:%M:%S')} | get_aftn_by_id: begin of the routine")
+    print_context(FILENAME, "begin of the routine")
 
     if time.time() > int(access["expiration_date"]):
         print("getting a new key...")
@@ -102,5 +105,5 @@ while True:
 
     traffic_search(access)
 
-    print(f"{datetime.now().strftime('%H:%M:%S')} | get_aftn_by_id: end of the routine")
+    print_context(FILENAME, "end of the routine")
     time.sleep(3600)

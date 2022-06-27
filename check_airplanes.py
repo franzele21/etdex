@@ -8,8 +8,6 @@ import time
 from functions import *
 from datetime import datetime
 
-print(f"{datetime.now().strftime('%H:%M:%S')} | check_airplanes: initialization")
-
 # final variable of how many minutes it takes to consider, that an
 # airplane is really disappeared from the radars (in minutes)
 DELAY_INVISIBLE = 5
@@ -20,9 +18,12 @@ DELAY_DELETE = 10
 MIN_VELOCITY = 5
 # path to the database
 DATABASE_PATH = "airplane.db"
+FILENAME = os.path.basename(__file__)
+
+print_context(FILENAME, "initialization")
 
 while True:
-    print(f"{datetime.now().strftime('%H:%M:%S')} | check_airplanes: begin of the routine")
+    print_context(FILENAME, "begin of the routine")
 
     conn = create_connection(DATABASE_PATH)
 
@@ -32,7 +33,7 @@ while True:
                             """)
     query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
     while not db_status:
-        print(f"{datetime.now().strftime('%H:%M:%S')} | check_airplanes: waiting for the {DATABASE_PATH} database to be unlocked")
+        print_context(FILENAME, "waiting for the {DATABASE_PATH} database to be unlocked")
         
         time.sleep(5)
         db_status = query(conn, """
@@ -171,5 +172,5 @@ while True:
 
     conn.close()
 
-    print(f"{datetime.now().strftime('%H:%M:%S')} | check_airplanes: end of the routine")
+    print_context(FILENAME, "end of the routine")
     time.sleep(30)
