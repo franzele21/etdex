@@ -9,9 +9,10 @@ import requests
 import json
 import time
 import sys
+import os
 from datetime import datetime
+from functions import print_context
 
-print(f"{datetime.now().strftime('%H:%M:%S')} | get_ppr: initialization")
 
 # path to the id for the ppr api
 PPR_AUTH_PATH = "auth_ppr.json"
@@ -23,7 +24,9 @@ MAXIMUM_PPR_OLD = 2
 PPR_STATUS = "confirmed"
 # output file, where the PPR is going to be kept
 OUTPUT_FILE = "output_ppr.json"
+FILENAME = os.path.basename(__file__)
 
+print_context(FILENAME, "initialization")
 
 # we will first retrieve the id and password for the PPR API and for 
 # the airport API
@@ -54,7 +57,7 @@ airports = json.loads(response.text)["data"]
 airports_name = [airport["name"] for airport in airports]
 
 while True:
-    print(f"{datetime.now().strftime('%H:%M:%S')} | get_ppr: begin of the routine")
+    print_context(FILENAME, "begin of the routine")
 
     ppr_max_time = str(int(time.time()))
     ppr_min_time = str(int(time.time()) - (MAXIMUM_PPR_OLD * 60 * 60))
@@ -67,7 +70,7 @@ while True:
         "afterTimestamp": ppr_min_time
     }
 
-    response = requests.get("https://dev1.avdb.aerops.com/public/ppr-data",
+    response = requests.get("https://avdb.aerops.com/public/ppr-data",
                         params=search_parameters,
                         auth=(user_ppr, password_ppr))
 
@@ -75,7 +78,7 @@ while True:
     if response.text != "":
         multiple_ppr = json.loads(response.text)
     else:
-        print(response, "couldn't load any PPRs")
+        print_context(FILENAME, f"{response} couldn't load any PPRs")
         multiple_ppr = ""
 
     # we verify that the PPR are valid (that the airport where it landed or
@@ -117,5 +120,5 @@ while True:
     with open(OUTPUT_FILE, "w+") as file:
         file.write(json.dumps(new_ppr, indent=2))
 
-    print(f"{datetime.now().strftime('%H:%M:%S')}|  get_ppr: end of the routine")
+    print_context(FILENAME, "end of the routine")
     time.sleep(MAXIMUM_PPR_OLD * 60 * 60 )
