@@ -139,7 +139,7 @@ while True:
                             "apInvisibleTime" INTEGER,
                             "apSource" TEXT,
                             CONSTRAINT unique_direction UNIQUE (apRegis, apSource),
-                            PRIMARY KEY ("apRegis") );
+                            PRIMARY KEY ("apRegis", "apSource") );
                     """)
 
     for airplane_name in airplane_data.keys():
