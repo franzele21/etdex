@@ -50,6 +50,14 @@ while True:
         time.sleep(30)
         continue
     
+
+    db_status = query(conn, "INSERT INTO \"INVISIBLE_AIRPLANE\" VALUES (\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\");")
+    while not db_status:
+        print(f"{datetime.now().strftime('%H:%M:%S')} | check_airplanes: waiting for the {DATABASE_PATH} databse to be unlocked")
+        time.sleep(5)
+        db_status = query(conn, "INSERT INTO \"INVISIBLE_AIRPLANE\" VALUES (\"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\");")
+
+
     source_list = query(conn, "SELECT DISTINCT apSource FROM \"AIRPLANE\" WHERE 1;").fetchall()
     source_list = [item[0] for item in source_list]
 
