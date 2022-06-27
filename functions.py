@@ -53,3 +53,4 @@ sqlite3.Cursor or None
         return cursor
     except Error as e:
         print(f"Error: '{e}'")
+        return False
