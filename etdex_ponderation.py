@@ -474,4 +474,4 @@ while True:
     conn.close()
 
     print_context(FILENAME, "end of the routine")
-    time.sleep(1800)
+    time.sleep(900)
