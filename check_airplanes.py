@@ -29,7 +29,7 @@ while True:
 
     db_status = query(conn, """
                                 INSERT INTO "AIRPLANE" 
-                                VALUES ("Lorem ipsum dolor sit amet consectetur adipiscing elit", "", "", "", "", "", "", "");
+                                VALUES ("Lorem ipsum dolor sit amet consectetur adipiscing elit", "", "", "", "", "", "", "", "", "");
                             """)
     query(conn, "DELETE FROM \"AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
     while not db_status:
@@ -38,7 +38,7 @@ while True:
         time.sleep(5)
         db_status = query(conn, """
                                     INSERT INTO "AIRPLANE" 
-                                    VALUES ("Lorem ipsum dolor sit amet consectetur adipiscing elit", "", "", "", "", "", "", "");
+                                    VALUES ("Lorem ipsum dolor sit amet consectetur adipiscing elit", "", "", "", "", "", "", "", "", "");
                                 """)
         query(conn, "DELETE FROM \"AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
 
