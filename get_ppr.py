@@ -10,7 +10,6 @@ import json
 import time
 import sys
 import os
-from datetime import datetime
 from functions import print_context
 
 
