@@ -143,7 +143,7 @@ while True:
                                                                             "longitude": airport_coords[1]
                                                                             }
                                                                         })
-    if previous_been_read(OUTPUT_FILE):
+    if not previous_been_read(OUTPUT_FILE):
         with open(OUTPUT_FILE) as file:
             previous_airport_by_zone = json.loads(file.read())["data"]
             airport_in_zone = previous_airport_by_zone | airport_in_zone
