@@ -33,7 +33,7 @@ while True:
                             """)
     query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
     while not db_status:
-        print_context(FILENAME, "waiting for the {DATABASE_PATH} database to be unlocked")
+        print_context(FILENAME, f"waiting for the {DATABASE_PATH} database to be unlocked")
         
         time.sleep(5)
         db_status = query(conn, """
