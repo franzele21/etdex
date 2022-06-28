@@ -60,15 +60,40 @@ sqlite3.Cursor or None
 class bcolors:
     reset="\033[0m"       # Text Reset
 
-    get_airplane = "\033[1;94m"     # blue
-    check_airplane = "\033[1;92m"   # green
-    etdex_ponderation = "\033[1;90m\033[47m" # bold intense black + white background
-    get_ppr = "\033[1;95m"          # purple
-    get_aftn_by_id = "\033[1;93m"         # yellow
-    get_airport_by_zone = "\033[1;36m"      # cyan
+    get_airplane = "\033[1;94m"                 # blue
+    check_airplanes = "\033[1;92m"              # green
+    etdex_ponderation = "\033[1;90m\033[47m"    # bold intense black + white background
+    get_ppr = "\033[1;95m"                      # purple
+    get_aftn_by_id = "\033[1;93m"               # yellow
+    get_airport_by_zone = "\033[1;36m"          # cyan
+    default = "\033[1;37m"
 
 
-def print_context(file: str, message: str):
+def print_context(file: str, message: str) -> None:
+    """
+Use to print context from a file, with color for each file
+The print format is :
+<time> | <file>: <message>
+
+Parameters
+----------
+file : str
+    The file that needs to print context
+message : str
+    The content that needs to be printed
+
+Returns
+-------
+None
+    Print a formated message
+    """
     file = file [:-3]
-    file_class = file[:11] if "get_airplane" in file else file
-    print(f"{datetime.now().strftime('%H:%M:%S')} | {getattr(bcolors, file_class)}{file}{bcolors.reset}:\t\t{message}")
+    file_class = file[:12] if "get_airplane" in file else file
+
+    if file_class not in dir(bcolors): file_class = "default"
+
+    output_time = datetime.now().strftime('%H:%M:%S')
+    color = getattr(bcolors, file_class)
+    output_file = f"{color}{file}{bcolors.reset}:"
+
+    print(f"{output_time} | {output_file.ljust(20)}\t{message}")
