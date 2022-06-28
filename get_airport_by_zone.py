@@ -11,7 +11,6 @@ import json
 import time
 import os
 from functions import *
-from datetime import datetime
 from airplane_zone import create_zone
 from in_polygon import is_inside_polygon
 
