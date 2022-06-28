@@ -28,19 +28,19 @@ while True:
     conn = create_connection(DATABASE_PATH)
 
     db_status = query(conn, """
-                                INSERT INTO "INVISIBLE_AIRPLANE" 
+                                INSERT INTO "AIRPLANE" 
                                 VALUES ("Lorem ipsum dolor sit amet consectetur adipiscing elit", "", "", "", "", "", "", "");
                             """)
-    query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
+    query(conn, "DELETE FROM \"AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
     while not db_status:
         print_context(FILENAME, f"waiting for the {DATABASE_PATH} database to be unlocked")
         
         time.sleep(5)
         db_status = query(conn, """
-                                    INSERT INTO "INVISIBLE_AIRPLANE" 
+                                    INSERT INTO "AIRPLANE" 
                                     VALUES ("Lorem ipsum dolor sit amet consectetur adipiscing elit", "", "", "", "", "", "", "");
                                 """)
-        query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
+        query(conn, "DELETE FROM \"AIRPLANE\" WHERE apRegis = \"Lorem ipsum dolor sit amet consectetur adipiscing elit\";")
 
     
     table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'INVISIBLE_AIRPLANE';").fetchall()
