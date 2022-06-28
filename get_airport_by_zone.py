@@ -66,7 +66,7 @@ list
 
     airplanes = airplanes.fetchall() if not isinstance(airplanes, type(None)) and airplanes else []
 
-    query(conn, "DELETE FROM \"\INVISIBLE_AIRPLANE\" WHERE 1;")
+    query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
     
     return airplanes
 
