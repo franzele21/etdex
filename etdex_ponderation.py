@@ -333,7 +333,7 @@ while True:
     # found, the landing will have a 100% of probability 
     if not ppr_been_read:
         with open(PPR_FILE, "w+") as file:
-            file.write(json.dumps({"been_read": True, "new_data": all_ppr}))
+            file.write(json.dumps({"been_read": True, "new_ppr": all_ppr}))
         for ppr_id in all_ppr:
             departing_airport = all_ppr[ppr_id]["departingTo"]
             present_airport = all_ppr[ppr_id]["airport"]
