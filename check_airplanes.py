@@ -92,39 +92,40 @@ while True:
     for airplane in airplanes:
         airplane_name = airplane[0]
         same_airplane = query(conn, f"SELECT DISTINCT apInvisible FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}';")
-        same_airplane = [item[0] for item in same_airplane]
-        if 0 in same_airplane:
-            # with those deletion, we keep the only sources that can still track
-            query(conn, f"""
-                            DELETE FROM \"AIRPLANE\"
-                            WHERE apRegis = '{airplane_name}'
-                            AND apInvisible = '1';
-                        """)
-        else:
-            last_seen = query(conn, f"""
-                                        SELECT * FROM "AIRPLANE"
-                                        WHERE apTime = (
-                                            SELECT MAX(apTime) FROM "AIRPLANE"
-                                            WHERE apRegis = '{airplane_name}'
-                                        );
-                                    """)
-            last_seen = last_seen.fetchone()
-            if not isinstance(last_seen, type(None)):
-                is_in_db = query(conn, f"SELECT count(apRegis) FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = '{last_seen[0]}';")
-                is_in_db = is_in_db.fetchall() if not isinstance(is_in_db, type(None)) else [[0]]
-
-                if is_in_db[0][0] == 0:
-                    query(conn, f"""
-                                    INSERT INTO "INVISIBLE_AIRPLANE"
-                                    VALUES ('{last_seen[0]}', '{last_seen[1]}', 
-                                    '{last_seen[2]}', '{last_seen[3]}', '{last_seen[4]}', 
-                                    '{last_seen[5]}', '{last_seen[6]}', '{last_seen[8]}')
-                                """)
-
+        if same_airplane != False:
+            same_airplane = [item[0] for item in same_airplane]
+            if 0 in same_airplane:
+                # with those deletion, we keep the only sources that can still track
                 query(conn, f"""
                                 DELETE FROM \"AIRPLANE\"
-                                WHERE apRegis = '{last_seen[0]}';
+                                WHERE apRegis = '{airplane_name}'
+                                AND apInvisible = '1';
                             """)
+            else:
+                last_seen = query(conn, f"""
+                                            SELECT * FROM "AIRPLANE"
+                                            WHERE apTime = (
+                                                SELECT MAX(apTime) FROM "AIRPLANE"
+                                                WHERE apRegis = '{airplane_name}'
+                                            );
+                                        """)
+                last_seen = last_seen.fetchone()
+                if not isinstance(last_seen, type(None)):
+                    is_in_db = query(conn, f"SELECT count(apRegis) FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = '{last_seen[0]}';")
+                    is_in_db = is_in_db.fetchall() if not isinstance(is_in_db, type(None)) else [[0]]
+
+                    if is_in_db[0][0] == 0:
+                        query(conn, f"""
+                                        INSERT INTO "INVISIBLE_AIRPLANE"
+                                        VALUES ('{last_seen[0]}', '{last_seen[1]}', 
+                                        '{last_seen[2]}', '{last_seen[3]}', '{last_seen[4]}', 
+                                        '{last_seen[5]}', '{last_seen[6]}', '{last_seen[8]}')
+                                    """)
+
+                    query(conn, f"""
+                                    DELETE FROM \"AIRPLANE\"
+                                    WHERE apRegis = '{last_seen[0]}';
+                                """)
 
     # add airplanes that are too slow (= on the ground)
     airplanes = query(conn, f"SELECT DISTINCT apRegis FROM \"AIRPLANE\" WHERE apVelocity < '{MIN_VELOCITY}';").fetchall()
