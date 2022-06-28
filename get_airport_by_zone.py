@@ -49,7 +49,7 @@ list
 
 def get_airplanes(file: str) -> list:
     """
-Used to get the airplanes to analyse
+Used to get the airplanes to analyse, and delete it after
 
 Parameters
 ----------
@@ -65,6 +65,8 @@ list
     airplanes = query(conn, "SELECT * FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
 
     airplanes = airplanes.fetchall() if not isinstance(airplanes, type(None)) and airplanes else []
+
+    query(conn, "DELETE FROM \"\INVISIBLE_AIRPLANE\" WHERE 1;")
     
     return airplanes
 
