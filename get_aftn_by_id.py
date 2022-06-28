@@ -2,7 +2,6 @@ import requests
 import json
 import os
 import time
-from datetime import datetime
 from functions import print_context
 
 
@@ -45,7 +44,10 @@ def previous_been_read(output_file):
             if content["been_read"]:
                 return (True, 0)
             else:
-                max_id = max([int(id) for id in content["new_aftn"].keys()])
+                if content["new_aftn"].keys() > 0:
+                    max_id = max([int(id) for id in content["new_aftn"].keys()])
+                else:
+                    max_id = 0
                 return (False, max_id)
     except FileNotFoundError:
         return (True, 0)
