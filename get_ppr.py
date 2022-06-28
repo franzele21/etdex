@@ -144,7 +144,7 @@ while True:
 
     # we write it in the output file  
     with open(OUTPUT_FILE, "w+") as file:
-        file.write(json.dumps(output_data, indent=2))
+        file.write(json.dumps(output_data))
 
     print_context(FILENAME, "end of the routine")
     time.sleep(MAXIMUM_PPR_OLD * 60 * 60 )
