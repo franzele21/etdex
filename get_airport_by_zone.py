@@ -93,6 +93,7 @@ list
 
     return new_list
 
+
 def previous_been_read(output_file):
     try:
         with open(output_file) as file:
@@ -104,6 +105,8 @@ def previous_been_read(output_file):
     except FileNotFoundError:
         return True
 
+
+
 # get all airports, and keep just the ones that have their coordinates
 response = requests.get("https://avdb.aerops.com/public/airports", auth=("ETDEX", "ijhf93**h&2eg2ge"))
 airports = json.loads(response.text)["data"]
@@ -114,6 +117,7 @@ while True:
 
     # get the airplanes that are inivisble by the ADS-B system
     airplanes = format_airplanes(get_airplanes(AIRPLANE_DATABASE))
+    print_context(FILENAME, f"number of new invisible airplane: {len(airplanes)}")
 
     airport_in_zone = {}
     for airplane in airplanes:
