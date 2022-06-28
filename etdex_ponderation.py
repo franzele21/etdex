@@ -216,8 +216,9 @@ while True:
 
     if exists(PPR_FILE):
         with open(PPR_FILE) as ppr_file:
-            ppr_been_read = json.loads(ppr_file.read())["been_read"]
-            all_ppr = json.loads(ppr_file.read())["new_ppr"]
+            content = json.loads(ppr_file.read())
+            ppr_been_read = content["been_read"]
+            all_ppr = content["new_ppr"]
     else:
         ppr_been_read = True
         all_ppr = []
