@@ -95,6 +95,6 @@ None
     output_time = datetime.now().strftime('%H:%M:%S')
     color = getattr(bcolors, file_class)
     output_file = f"{color}{file}{bcolors.reset}:"
-    output_file = output_file.ljust(25)
+    output_file = output_file.ljust(35)
 
-    print(f"{output_time} | {output_file}\t{message}")
+    print(f"{output_time} | {output_file} {message}")
