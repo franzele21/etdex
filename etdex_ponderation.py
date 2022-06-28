@@ -327,11 +327,17 @@ while True:
         airplane = all_ppr[ppr_id]["licenseNumber"]
 
         departure_time = all_ppr[ppr_id]["departure"]
-        departure_time = datetime.strptime(departure_time, "%a %b %d %Y %H:%M:%S %Z%z")
+        if "," in departure_time:
+            departure_time = datetime.strptime(departure_time, "%a, %d %b %Y %H:%M:%S %Z")
+        else:
+            departure_time = datetime.strptime(departure_time, "%a %b %d %Y %H:%M:%S %Z%z")
         departure_time = int(time.mktime(departure_time.timetuple()))
 
         arrival_time = all_ppr[ppr_id]["arrival"]
-        arrival_time = datetime.strptime(arrival_time, "%a %b %d %Y %H:%M:%S %Z%z")
+        if "," in arrival_time:
+            arrival_time = datetime.strptime(arrival_time, "%a, %d %b %Y %H:%M:%S %Z")
+        else:
+            arrival_time = datetime.strptime(arrival_time, "%a %b %d %Y %H:%M:%S %Z%z")
         arrival_time = int(time.mktime(arrival_time.timetuple()))
 
         # searching for all landings, that could have been at the present
