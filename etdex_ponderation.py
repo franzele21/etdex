@@ -208,14 +208,18 @@ while True:
 
     if exists(POSSIBLE_LANDINGS_ADSB_FILE):
         with open(POSSIBLE_LANDINGS_ADSB_FILE) as tracking_file:
-            tracking = json.loads(tracking_file.read())
+            tracking_been_read = json.loads(tracking_file.read())["been_read"]
+            tracking = json.loads(tracking_file.read())["data"]
     else:
+        tracking_been_read = True
         tracking = []
 
     if exists(PPR_FILE):
         with open(PPR_FILE) as ppr_file:
-            all_ppr = json.loads(ppr_file.read())
+            ppr_been_read = json.loads(ppr_file.read())["been_read"]
+            all_ppr = json.loads(ppr_file.read())["new_ppr"]
     else:
+        ppr_been_read = True
         all_ppr = []
 
     if exists(AFTN_FILE):
@@ -258,30 +262,34 @@ while True:
                     """)
 
     # add all airplanes coming from airTracker
-    for tracked_airplane in tracking:
-        # the probability is calculated, that it will always be more than 
-        # min_prob, and the more weight_prob is high, the more the final
-        # probability will be higher. Those number were choosen, so it will
-        # accept from 1 to 3 different airports, but if the numbers of 
-        # airports is greater than 3, the probability will not be high 
-        # enough, and will not be accepted by evidence_probability
-        min_prob = 0.6
-        weight_prob = 0.9
-        tracked_airplane_probability = min_prob + (weight_prob / len(tracking[tracked_airplane]["airport"]))
-        # it's a probability, so it has to be <=1
-        tracked_airplane_probability = min(1, tracked_airplane_probability)
+    if not tracking_been_read: 
+        with open(POSSIBLE_LANDINGS_ADSB_FILE, "w+") as file:
+            file.write(json.dumps({"been_read": True, "data": tracking}))
+        
+        for tracked_airplane in tracking:
+            # the probability is calculated, that it will always be more than 
+            # min_prob, and the more weight_prob is high, the more the final
+            # probability will be higher. Those number were choosen, so it will
+            # accept from 1 to 3 different airports, but if the numbers of 
+            # airports is greater than 3, the probability will not be high 
+            # enough, and will not be accepted by evidence_probability
+            min_prob = 0.6
+            weight_prob = 0.9
+            tracked_airplane_probability = min_prob + (weight_prob / len(tracking[tracked_airplane]["airport"]))
+            # it's a probability, so it has to be <=1
+            tracked_airplane_probability = min(1, tracked_airplane_probability)
 
 
-        tracked_airplane_time = tracking[tracked_airplane]["last_contact"]
+            tracked_airplane_time = tracking[tracked_airplane]["last_contact"]
 
-        for possible_airport in tracking[tracked_airplane]["airport"]:
-            query(conn, f"""
-                            INSERT INTO "UNTREATED_DATA"
-                            (udAirport, udRegis, udProbability, udSource, udTime)
-                            VALUES ('{possible_airport["regis"]}', '{tracked_airplane}',
-                            '{tracked_airplane_probability}', 'airTracker', 
-                            '{tracked_airplane_time}');
-                        """)
+            for possible_airport in tracking[tracked_airplane]["airport"]:
+                query(conn, f"""
+                                INSERT INTO "UNTREATED_DATA"
+                                (udAirport, udRegis, udProbability, udSource, udTime)
+                                VALUES ('{possible_airport["regis"]}', '{tracked_airplane}',
+                                '{tracked_airplane_probability}', 'airTracker', 
+                                '{tracked_airplane_time}');
+                            """)
 
     # here is the data from UNTREATED_DATA going to be treated, this means
     # that it will find all evidences that could refer to the same landing,
@@ -321,68 +329,71 @@ while True:
     # here are all the PPRs going to be checked, and if one has the same 
     # destination airport and same airplane. If one same landing has be 
     # found, the landing will have a 100% of probability 
-    for ppr_id in all_ppr:
-        departing_airport = all_ppr[ppr_id]["departingTo"]
-        present_airport = all_ppr[ppr_id]["airport"]
-        airplane = all_ppr[ppr_id]["licenseNumber"]
+    if not ppr_been_read:
+        with open(PPR_FILE, "w+") as file:
+            file.write(json.dumps({"been_read": True, "new_data": all_ppr}))
+        for ppr_id in all_ppr:
+            departing_airport = all_ppr[ppr_id]["departingTo"]
+            present_airport = all_ppr[ppr_id]["airport"]
+            airplane = all_ppr[ppr_id]["licenseNumber"]
 
-        departure_time = all_ppr[ppr_id]["departure"]
-        if "," in departure_time:
-            departure_time = datetime.strptime(departure_time, "%a, %d %b %Y %H:%M:%S %Z")
-        else:
-            departure_time = datetime.strptime(departure_time, "%a %b %d %Y %H:%M:%S %Z%z")
-        departure_time = int(time.mktime(departure_time.timetuple()))
+            departure_time = all_ppr[ppr_id]["departure"]
+            if "," in departure_time:
+                departure_time = datetime.strptime(departure_time, "%a, %d %b %Y %H:%M:%S %Z")
+            else:
+                departure_time = datetime.strptime(departure_time, "%a %b %d %Y %H:%M:%S %Z%z")
+            departure_time = int(time.mktime(departure_time.timetuple()))
 
-        arrival_time = all_ppr[ppr_id]["arrival"]
-        if "," in arrival_time:
-            arrival_time = datetime.strptime(arrival_time, "%a, %d %b %Y %H:%M:%S %Z")
-        else:
-            arrival_time = datetime.strptime(arrival_time, "%a %b %d %Y %H:%M:%S %Z%z")
-        arrival_time = int(time.mktime(arrival_time.timetuple()))
+            arrival_time = all_ppr[ppr_id]["arrival"]
+            if "," in arrival_time:
+                arrival_time = datetime.strptime(arrival_time, "%a, %d %b %Y %H:%M:%S %Z")
+            else:
+                arrival_time = datetime.strptime(arrival_time, "%a %b %d %Y %H:%M:%S %Z%z")
+            arrival_time = int(time.mktime(arrival_time.timetuple()))
 
-        # searching for all landings, that could have been at the present
-        # or the destination airport from the PPR
-        landings = query(conn, f"""
-                                    SELECT tdId, tdTime, tdAirport 
-                                    FROM \"TREATED_DATA\" 
-                                    WHERE tdAirport = '{departing_airport}'
-                                    OR tdAirport = '{present_airport}'
-                                    AND tdAirplane = '{airplane}';
-                                """)
-        landings = landings.fetchall()
+            # searching for all landings, that could have been at the present
+            # or the destination airport from the PPR
+            landings = query(conn, f"""
+                                        SELECT tdId, tdTime, tdAirport 
+                                        FROM \"TREATED_DATA\" 
+                                        WHERE tdAirport = '{departing_airport}'
+                                        OR tdAirport = '{present_airport}'
+                                        AND tdAirplane = '{airplane}';
+                                    """)
+            landings = landings.fetchall()
 
-        for landing_data in landings:
-            same_landing = False
-            # first check if the ppr is usable for its destination
-            if landing_data[2] == departing_airport:
-                time_limit = PPR_DELTA_TIME * 60 * 60
-                if landing_data[1] > departure_time and \
-                        landing_data[1] < departure_time + time_limit:
-                    same_landing = True
+            for landing_data in landings:
+                same_landing = False
+                # first check if the ppr is usable for its destination
+                if landing_data[2] == departing_airport:
+                    time_limit = PPR_DELTA_TIME * 60 * 60
+                    if landing_data[1] > departure_time and \
+                            landing_data[1] < departure_time + time_limit:
+                        same_landing = True
 
-            # then check if the ppr is usable for its present airport
-            if landing_data[2] == present_airport:
-                time_limit = PPR_DELTA_TIME * 60 * 60
-                min_time = arrival_time - (time_limit / 2)
-                max_time = arrival_time + (time_limit / 2)
+                # then check if the ppr is usable for its present airport
+                if landing_data[2] == present_airport:
+                    time_limit = PPR_DELTA_TIME * 60 * 60
+                    min_time = arrival_time - (time_limit / 2)
+                    max_time = arrival_time + (time_limit / 2)
+                    
+                    if landing_data[1] > min_time \
+                            and landing_data[1] < max_time:
+                        same_landing = True
                 
-                if landing_data[1] > min_time \
-                        and landing_data[1] < max_time:
-                    same_landing = True
-            
-            if same_landing:
+                if same_landing:
+                    query(conn, f"""
+                                    UPDATE \"TREATED_DATA\"
+                                    SET tdProb = '1.0'
+                                    WHERE tdId = '{landing_data[0]}';
+                                """)
+            if len(landings) == 0:
                 query(conn, f"""
-                                UPDATE \"TREATED_DATA\"
-                                SET tdProb = '1.0'
-                                WHERE tdId = '{landing_data[0]}';
+                                INSERT INTO "TREATED_DATA"
+                                (tdAirport, tdAirplane, tdTime, tdProb)
+                                VALUES ('{departing_airport}', '{airplane}', 
+                                '{departure_time}', '{ponderation["PPR"]["default"]/100.0}');
                             """)
-        if len(landings) == 0:
-            query(conn, f"""
-                            INSERT INTO "TREATED_DATA"
-                            (tdAirport, tdAirplane, tdTime, tdProb)
-                            VALUES ('{departing_airport}', '{airplane}', 
-                            '{departure_time}', '{ponderation["PPR"]["default"]/100.0}');
-                        """)
 
 
     if not aftn_data["been_read"]:
