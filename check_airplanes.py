@@ -149,10 +149,11 @@ while True:
                 is_in_db = is_in_db.fetchall() if not isinstance(is_in_db, type(None)) else [[0]]
 
                 if is_in_db[0][0] == 0:
+                    last_contact = last_seen[3] if last_seen[3] > 0 else int(time.time())
                     query(conn, f"""
                                     INSERT INTO "INVISIBLE_AIRPLANE"
                                     VALUES ('{last_seen[0]}', '{last_seen[1]}', 
-                                    '{last_seen[2]}', '{last_seen[3]}', '{last_seen[4]}', 
+                                    '{last_seen[2]}', '{last_contact}', '{last_seen[4]}', 
                                     '{last_seen[5]}', '{last_seen[6]}', '{last_seen[8]}')
                                 """)
 
