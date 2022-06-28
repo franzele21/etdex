@@ -208,8 +208,9 @@ while True:
 
     if exists(POSSIBLE_LANDINGS_ADSB_FILE):
         with open(POSSIBLE_LANDINGS_ADSB_FILE) as tracking_file:
-            tracking_been_read = json.loads(tracking_file.read())["been_read"]
-            tracking = json.loads(tracking_file.read())["data"]
+            content = json.loads(tracking_file.read())
+            tracking_been_read = content["been_read"]
+            tracking = content["data"]
     else:
         tracking_been_read = True
         tracking = []
