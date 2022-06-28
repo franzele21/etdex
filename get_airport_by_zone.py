@@ -64,7 +64,7 @@ list
     conn = create_connection(file)
     airplanes = query(conn, "SELECT * FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
 
-    airplanes = airplanes.fetchall() if not isinstance(airplanes, type(None)) else []
+    airplanes = airplanes.fetchall() if not isinstance(airplanes, type(None)) and not airplanes else []
     
     return airplanes
 
