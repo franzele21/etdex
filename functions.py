@@ -97,4 +97,4 @@ None
     output_file = f"{color}{file}{bcolors.reset}:"
     output_file = output_file.ljust(25)
 
-    print(f"{output_time} | {output_file}{message}")
+    print(f"{output_time} | {output_file}\t{message}")
