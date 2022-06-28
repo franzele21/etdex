@@ -28,6 +28,18 @@ FILENAME = os.path.basename(__file__)
 
 print_context(FILENAME, "initialization")
 
+def previous_been_read(output_file):
+    try:
+        with open(output_file) as file:
+            content = json.loads(file.read())
+            if content["been_read"]:
+                return (True, 0)
+            else:
+                max_id = max([int(id) for id in content["new_ppr"].keys()])
+                return (False, max_id)
+    except FileNotFoundError:
+        return (True, 0)
+
 # we will first retrieve the id and password for the PPR API and for 
 # the airport API
 try:
@@ -81,9 +93,11 @@ while True:
         print_context(FILENAME, f"{response} couldn't load any PPRs")
         multiple_ppr = ""
 
+    been_read, last_index = previous_been_read(OUTPUT_FILE)
+
     # we verify that the PPR are valid (that the airport where it landed or
     # destination airport exists)
-    new_ppr = {str(index): ppr for index, ppr in enumerate(multiple_ppr)
+    new_ppr = {str(index+last_index): ppr for index, ppr in enumerate(multiple_ppr)
                             if ppr["departingTo"].strip().upper() in airports_name
                             or ppr["airport"].strip().upper() in airports_name
                             and len(ppr["eventTimestamp"]) > 1}                  
@@ -115,10 +129,19 @@ while True:
     for index in to_delete:
         del new_ppr[index]
 
+    if not been_read:
+        with open(OUTPUT_FILE) as file:
+            previous_content = json.loads(file.read())["new_ppr"]
+        new_ppr = previous_content | previous_content
+    
+    output_data = {
+        "been_read": False,
+        "new_ppr": new_ppr
+    }
 
     # we write it in the output file  
     with open(OUTPUT_FILE, "w+") as file:
-        file.write(json.dumps(new_ppr, indent=2))
+        file.write(json.dumps(output_data, indent=2))
 
     print_context(FILENAME, "end of the routine")
     time.sleep(MAXIMUM_PPR_OLD * 60 * 60 )

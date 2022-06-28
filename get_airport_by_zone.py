@@ -93,7 +93,16 @@ list
 
     return new_list
 
-
+def previous_been_read(output_file):
+    try:
+        with open(output_file) as file:
+            content = json.loads(file.read())
+            if content["been_read"]:
+                return True
+            else:
+                return False
+    except FileNotFoundError:
+        return True
 
 # get all airports, and keep just the ones that have their coordinates
 response = requests.get("https://avdb.aerops.com/public/airports", auth=("ETDEX", "ijhf93**h&2eg2ge"))
@@ -134,10 +143,19 @@ while True:
                                                                             "longitude": airport_coords[1]
                                                                             }
                                                                         })
+    if previous_been_read(OUTPUT_FILE):
+        with open(OUTPUT_FILE) as file:
+            previous_airport_by_zone = json.loads(file.read())["data"]
+            airport_in_zone = previous_airport_by_zone | airport_in_zone
+    
+    output_data = {
+        "been_read": False, 
+        "data": airport_in_zone
+    }
 
     # write the possibilities in a JSON file
     with open(OUTPUT_FILE, "w+") as file:
-        file.write(json.dumps(airport_in_zone, indent=2))
+        file.write(json.dumps(output_data, indent=2))
 
     print_context(FILENAME, "end of the routine")
     time.sleep(180)
