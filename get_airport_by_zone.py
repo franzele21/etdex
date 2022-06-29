@@ -11,6 +11,7 @@ import json
 import time
 import os
 from functions import *
+from json import JSONDecodeError
 from airplane_zone import create_zone
 from in_polygon import is_inside_polygon
 
@@ -106,7 +107,10 @@ def previous_been_read(output_file):
                 return False
     except FileNotFoundError:
         return True
-
+    except JSONDecodeError:
+        print_context(FILENAME, f"JSONDecodeError: will wait that {OUTPUT_FILE} will be ready")
+        time.sleep(60)
+        return previous_been_read(output_file)
 
 
 # get all airports, and keep just the ones that have their coordinates
