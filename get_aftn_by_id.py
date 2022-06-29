@@ -45,7 +45,7 @@ def previous_been_read(output_file):
             if content["been_read"]:
                 return (True, 0)
             else:
-                if content["new_aftn"].keys() > 0:
+                if len(content["new_aftn"].keys()) > 0:
                     max_id = max([int(id) for id in content["new_aftn"].keys()])
                 else:
                     max_id = 0
