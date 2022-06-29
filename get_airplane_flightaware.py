@@ -8,18 +8,19 @@ airplane" in the database.
 
 import json
 import time
-from datetime import datetime
+import os
 import requests
 from functions import *
-
 
 # path to the database
 DATABASE_PATH = "airplane.db"
 # api, from where the airplanes comes
 SOURCE = "FlightAware"
 AUTH_FILE = "auth_api.json"
+FILENAME = os.path.basename(__file__)
+CYCLE_TIME = 30
 
-print(f"{datetime.now().strftime('%H:%M:%S')} | get_airplane_{SOURCE}: initialization")
+print_context(FILENAME, "initialization")
 
 def to_dict_by_callsign(airplane_list: list, callsign: str, 
                         latitude: int, longitude: int, 
@@ -72,7 +73,6 @@ dict
         if isinstance(geo_altitude_value, type(None)):
             continue
         geo_altitude_value *= 0.3048    # to convert from feet to meters
-        geo_altitude_value *= 100       # to convert from meters to hundreds meters
 
         velocity_value = i[velocity] if not isinstance(i[velocity], str) else eval(i[velocity])
         if isinstance(velocity_value, type(None)):
@@ -84,10 +84,11 @@ dict
         airplane_time_value = i[airplane_time]
         if isinstance(airplane_time_value, type(None)):
             airplane_time_value = int(time.time())
-        else: 
-            airplane_time_value = datetime.strptime(airplane_time_value, "%Y-%m-%dT%H:%M:%SZ")
-            airplane_time_value = time.mktime(airplane_time_value.timetuple())
 
+        if isinstance(i[callsign], type(None)):
+            continue
+
+        i[callsign] = i[callsign].replace("-", "")
         new_dict[i[callsign].strip()] = {"latitude": latitude_value, 
                                             "longitude": longitude_value,
                                             "heading": heading_value, 
@@ -103,7 +104,7 @@ with open(AUTH_FILE) as file:
     api_key = content["key"]
 
 while True:
-    print(f"{datetime.now().strftime('%H:%M:%S')} | get_airplane_{SOURCE}: begin of the routine")
+    print_context(FILENAME, "begin of the routine")
 
     headers = {
         'Accept': 'application/json; charset=UTF-8',
@@ -116,89 +117,94 @@ while True:
     }
 
     response = requests.get('https://aeroapi.flightaware.com/aeroapi/flights/search/positions', params=params, headers=headers)
+
+    if response.status_code != 200:
+        print_context(FILENAME, f"ERROR: there was a problem during the request (statuscode: {response.status_code})")
+        print_context(FILENAME, "anormal end of the routine")
+        time.sleep(CYCLE_TIME)
+        continue
+
     content = json.loads(response.text)
-    if "positions" in content.keys():
-        content = json.loads(response.text)["positions"]
-        
-        # create a dict from the api data, indexed by they're licence number 
-        airplane_data = to_dict_by_callsign(content, "fa_flight_id", "latitude", "longitude", "heading", "altitude", "groundspeed", "timestamp")
+    
+    # create a dict from the api data, indexed by they're licence number 
+    airplane_data = to_dict_by_callsign(content, "reg", "lat", "lon", "trk", "alt", "spd", "uti")
 
-        # creates the database if it doesn't exist
-        conn = create_connection(DATABASE_PATH)
-        table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
+    # creates the database if it doesn't exist
+    conn = create_connection(DATABASE_PATH)
+    table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
 
-        if table_exists[0][0] == 0:
-            # we have the basic parameters of a airplane (registration 
-            # name, coordinate, altitude, speed and heading) qnd three more
-            # aspects : when it was last seen, if it is invisible, and since
-            # when it's invisible
-            query(conn, """
-                            CREATE TABLE "AIRPLANE" ( 
-                                "apRegis" TEXT NOT NULL, 
-                                "apLatitude" REAL, 
-                                "apLongitude" REAL, 
-                                "apAltitude" REAL, 
-                                "apTime" INTEGER,
-                                "apVelocity" REAL,
-                                "apHeading" REAL,
-                                "apInvisible" INTEGER,
-                                "apInvisibleTime" INTEGER,
-                                "apSource" TEXT,
-                                CONSTRAINT unique_direction UNIQUE (apRegis, apSource),
-                                PRIMARY KEY ("apRegis", "apSource") );
+    if table_exists[0][0] == 0:
+        # we have the basic parameters of a airplane (registration 
+        # name, coordinate, altitude, speed and heading) qnd three more
+        # aspects : when it was last seen, if it is invisible, and since
+        # when it's invisible
+        query(conn, """
+                        CREATE TABLE "AIRPLANE" ( 
+                            "apRegis" TEXT NOT NULL, 
+                            "apLatitude" REAL, 
+                            "apLongitude" REAL, 
+                            "apAltitude" REAL, 
+                            "apTime" INTEGER,
+                            "apVelocity" REAL,
+                            "apHeading" REAL,
+                            "apInvisible" INTEGER,
+                            "apInvisibleTime" INTEGER,
+                            "apSource" TEXT,
+                            CONSTRAINT unique_direction UNIQUE (apRegis, apSource),
+                            PRIMARY KEY ("apRegis", "apSource") );
+                    """)
+
+    for airplane_name in airplane_data.keys():
+        unique_airplane = query(conn, f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';").fetchone()
+        tmp_airplane = airplane_data[airplane_name]
+
+        # if the airplane isn't in the database, we add it
+        if unique_airplane == None:
+            query(conn, f"""
+                            INSERT INTO "AIRPLANE" VALUES
+                            ('{airplane_name}', '{tmp_airplane["latitude"]}', 
+                            '{tmp_airplane["longitude"]}', '{tmp_airplane["altitude"]}', 
+                            '{int(tmp_airplane["time"])}', '{tmp_airplane["velocity"]}',
+                            '{tmp_airplane["heading"]}', '0', '0', '{SOURCE}');
+                            
+                        """)
+        else:
+            # if it does exists, we update it 
+            # here we can see can we put apInvisible and apInivisibleTime 
+            # to 0, because if the airplane wasn't on radar for a small
+            # time, it will be registered as disappeared, but if it is 
+            # in the list, it is reachable by ADS-B, so it isn't
+            # invisible
+            query(conn, f"""
+                            UPDATE "AIRPLANE"
+                            SET apLatitude = '{tmp_airplane["latitude"]}',
+                            apLongitude = '{tmp_airplane["longitude"]}',
+                            apAltitude = '{tmp_airplane["altitude"]}',
+                            apTime = '{tmp_airplane["time"]}',
+                            apHeading = '{tmp_airplane["heading"]}',
+                            apVelocity = '{tmp_airplane["velocity"]}',
+                            apInvisible = '0',
+                            apInvisibleTime = '0'
+                            WHERE apRegis = '{airplane_name}'
+                            AND apSource = '{SOURCE}';
                         """)
 
-        for airplane_name in airplane_data.keys():
-            unique_airplane = query(conn, f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';").fetchone()
-            tmp_airplane = airplane_data[airplane_name]
-
-            # if the airplane isn't in the database, we add it
-            if unique_airplane == None:
-                query(conn, f"""
-                                INSERT INTO "AIRPLANE" VALUES
-                                ('{airplane_name}', '{tmp_airplane["latitude"]}', 
-                                '{tmp_airplane["longitude"]}', '{tmp_airplane["altitude"]}', 
-                                '{int(tmp_airplane["time"])}', '{tmp_airplane["velocity"]}',
-                                '{tmp_airplane["heading"]}', '0', '0', '{SOURCE}');
-                                
-                            """)
-            else:
-                # if it does exists, we update it 
-                # here we can see can we put apInvisible and apInivisibleTime 
-                # to 0, because if the airplane wasn't on radar for a small
-                # time, it will be registered as disappeared, but if it is 
-                # in the list, it is reachable by ADS-B, so it isn't
-                # invisible
+    # if the airplane isn't to be seen by the ADS-B system,
+    # it will be registered as invisible
+    airplanes = query(conn, "SELECT apRegis, apSource FROM \"AIRPLANE\" WHERE apInvisible = '0';")
+    for airplane in airplanes:
+        if airplane[1] == SOURCE: 
+            airplane_name = airplane[0]
+            if airplane_name not in airplane_data.keys():
                 query(conn, f"""
                                 UPDATE "AIRPLANE"
-                                SET apLatitude = '{tmp_airplane["latitude"]}',
-                                apLongitude = '{tmp_airplane["longitude"]}',
-                                apAltitude = '{tmp_airplane["altitude"]}',
-                                apTime = '{tmp_airplane["time"]}',
-                                apHeading = '{tmp_airplane["heading"]}',
-                                apVelocity = '{tmp_airplane["velocity"]}',
-                                apInvisible = '0',
-                                apInvisibleTime = '0'
+                                SET apInvisible = '1',
+                                apInvisibleTime = '{int(time.time())}'
                                 WHERE apRegis = '{airplane_name}'
                                 AND apSource = '{SOURCE}';
                             """)
+    conn.close()
 
-        # if the airplane isn't to be seen by the ADS-B system,
-        # it will be registered as invisible
-        airplanes = query(conn, "SELECT apRegis, apSource FROM \"AIRPLANE\" WHERE apInvisible = '0';")
-        for airplane in airplanes:
-            if airplane[1] == SOURCE: 
-                airplane_name = airplane[0]
-                if airplane_name not in airplane_data.keys():
-                    query(conn, f"""
-                                    UPDATE "AIRPLANE"
-                                    SET apInvisible = '1',
-                                    apInvisibleTime = '{int(time.time())}'
-                                    WHERE apRegis = '{airplane_name}'
-                                    AND apSource = '{SOURCE}';
-                                """)
-        conn.close()
-
-    print(f"{datetime.now().strftime('%H:%M:%S')} | get_airplane_{SOURCE}: end of the routine")
+    print_context(FILENAME, "end of the routine")
     # it will pause 30 seconds, so we won't have any problem with the APIs
-    time.sleep(30)
+    time.sleep(CYCLE_TIME)
