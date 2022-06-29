@@ -24,6 +24,7 @@ POSSIBLE_LANDINGS_ADSB_FILE = "airport_by_zone.json"
 PPR_FILE = "output_ppr.json"
 AFTN_FILE = "data_traffic.json"
 FILENAME = os.path.basename(__file__)
+CYCLE_TIME = 900                        # in seconds
 
 print_context(FILENAME, "initialization")
 
@@ -474,4 +475,4 @@ while True:
     conn.close()
 
     print_context(FILENAME, "end of the routine")
-    time.sleep(900)
+    time.sleep(CYCLE_TIME)

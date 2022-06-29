@@ -11,6 +11,7 @@ MAX_ID_FILE = "max_id.txt"
 with open(MAX_ID_FILE) as file:
     MAX_ID = int(file.read())
 FILENAME = os.path.basename(__file__)
+CYCLE_TIME = 3600
 
 print_context(FILENAME, "initialization")
 
@@ -108,4 +109,4 @@ while True:
     traffic_search(access)
 
     print_context(FILENAME, "end of the routine")
-    time.sleep(3600)
+    time.sleep(CYCLE_TIME)

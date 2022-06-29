@@ -19,6 +19,7 @@ DATABASE_PATH = "airplane.db"
 SOURCE = "JetVision"
 AUTH_FILE = "auth_api.json"
 FILENAME = os.path.basename(__file__)
+CYCLE_TIME = 30
 
 print_context(FILENAME, "initialization")
 
@@ -116,9 +117,9 @@ while True:
     if response.status_code != 200:
         print_context(FILENAME, f"ERROR: there was a problem during the request (statuscode: {response.status_code})")
         print_context(FILENAME, "anormal end of the routine")
-        time.sleep(30)
+        time.sleep(CYCLE_TIME)
         continue
-    
+
     content = json.loads(response.text)
     
     # create a dict from the api data, indexed by they're licence number 
@@ -202,4 +203,4 @@ while True:
 
     print_context(FILENAME, "end of the routine")
     # it will pause 30 seconds, so we won't have any problem with the APIs
-    time.sleep(30)
+    time.sleep(CYCLE_TIME)

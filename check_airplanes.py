@@ -19,6 +19,7 @@ MIN_VELOCITY = 5
 # path to the database
 DATABASE_PATH = "airplane.db"
 FILENAME = os.path.basename(__file__)
+CYCLE_TIME = 100 
 
 print_context(FILENAME, "initialization")
 
@@ -67,7 +68,8 @@ while True:
     table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
 
     if table_exists[0][0] == 0:
-        time.sleep(30)
+        print_context(FILENAME, "waiting for the AIRPLANE tabl to be created")
+        time.sleep(CYCLE_TIME)
         continue
 
 
@@ -175,4 +177,4 @@ while True:
     conn.close()
 
     print_context(FILENAME, "end of the routine")
-    time.sleep(30)
+    time.sleep(CYCLE_TIME)

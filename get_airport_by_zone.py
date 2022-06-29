@@ -20,6 +20,7 @@ AIRPLANE_DATABASE = "airplane.db"
 # the path of the output file
 OUTPUT_FILE = "airport_by_zone.json"
 FILENAME = os.path.basename(__file__)
+CYCLE_TIME = 180
 
 print_context(FILENAME, "initialization")
 
@@ -163,4 +164,4 @@ while True:
         file.write(json.dumps(output_data, indent=2))
 
     print_context(FILENAME, "end of the routine")
-    time.sleep(180)
+    time.sleep(CYCLE_TIME)
