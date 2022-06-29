@@ -112,8 +112,13 @@ while True:
     auth = (user, api_key)
 
     response = requests.get('https://mlat.jetvision.de/mlat/aircraftlist.json', headers=headers, auth=auth)
-    print(response, response.text, response.apparent_encoding)
 
+    if response.status_code != 200:
+        print_context(FILENAME, f"ERROR: there was a problem during the request (statuscode: {response.status_code})")
+        print_context(FILENAME, "anormal end of the routine")
+        time.sleep(30)
+        continue
+    
     content = json.loads(response.text)
     
     # create a dict from the api data, indexed by they're licence number 
