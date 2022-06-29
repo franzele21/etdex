@@ -10,6 +10,7 @@ import json
 import time
 import sys
 import os
+from requests.exceptions import ConnectionError
 from functions import print_context
 
 
@@ -18,7 +19,8 @@ PPR_AUTH_PATH = "auth_ppr.json"
 # path to the id for the airport api
 AIRPORT_AUTH_PATH = "auth_avdb.json"
 # the PPR needs to be younger than this variable in minutes
-MAXIMUM_PPR_OLD = 30
+# it is the cycle time too
+MAXIMUM_PPR_OLD = 10
 # the status of the ppr
 PPR_STATUS = "confirmed"
 # output file, where the PPR is going to be kept
@@ -84,9 +86,14 @@ while True:
         "afterTimestamp": ppr_min_time
     }
 
-    response = requests.get("https://avdb.aerops.com/public/ppr-data",
-                        params=search_parameters,
-                        auth=(user_ppr, password_ppr))
+    try:
+        response = requests.get("https://avdb.aerops.com/public/ppr-data",
+                            params=search_parameters,
+                            auth=(user_ppr, password_ppr))
+    except ConnectionError:
+        print_context(FILENAME, "ConnectionError: will wait some 15 seconds to resolve it")
+        time.sleep(15)
+        continue
 
     ## if the auth weren't correct, it will display an error 401
     if response.text != "":
