@@ -6,7 +6,7 @@ times on different API
 
 import time
 from functions import *
-from datetime import datetime
+import os
 
 # final variable of how many minutes it takes to consider, that an
 # airplane is really disappeared from the radars (in minutes)
