@@ -5,7 +5,6 @@ Here you can find functions that are used in many other program
 import sqlite3
 from sqlite3 import Error
 from datetime import datetime
-import os
 
 def create_connection(path: str, check_same_thread :bool=True) -> sqlite3.Connection: #|None
     """
