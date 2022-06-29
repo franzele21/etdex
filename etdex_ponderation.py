@@ -189,10 +189,32 @@ it was, and i's probability)
 
     return evidence_prob
 
-def get_aftn(aftn_message):
+def get_aftn(aftn_message: dict) -> dict:
+    """
+Transform the aftn message in a more readable message, with only the 
+parts that are interesting to us (date, callsign and airport)
+
+Parameters
+----------
+aftn_message : dict
+    the original aftn message
+
+Return
+------
+dict
+    the aftn, with only the data that interests us
+
+Note
+----
+This function was created after some changes in the return data of 
+the aftn-message, because previously the messages was compatible with
+the program, but now it needs to be translated.
+    """
+    # the FLIGHTDATE is the date of the movement, and TARR is the 
+    # landing time
     aftn_time = aftn_message["FLIGHTDATE"] + "T" + aftn_message["TARR"]
     aftn_time = datetime.strptime(aftn_time, "%Y-%m-%dT%H:%M:%S")
-    aftn_time = int(time.mktime(aftn_time.timetuple()))
+    aftn_time = int(time.mktime(aftn_time.timetuple())) # we convert it to an unix timestamp
     
     return {
         "airplane": aftn_message["CALLSIGN"],
