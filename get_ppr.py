@@ -17,8 +17,8 @@ from functions import print_context
 PPR_AUTH_PATH = "auth_ppr.json"
 # path to the id for the airport api
 AIRPORT_AUTH_PATH = "auth_avdb.json"
-# the PPR needs to be younger than this variable in hour
-MAXIMUM_PPR_OLD = 2
+# the PPR needs to be younger than this variable in minutes
+MAXIMUM_PPR_OLD = 30
 # the status of the ppr
 PPR_STATUS = "confirmed"
 # output file, where the PPR is going to be kept
@@ -74,7 +74,7 @@ while True:
     print_context(FILENAME, "begin of the routine")
 
     ppr_max_time = str(int(time.time()))
-    ppr_min_time = str(int(time.time()) - (MAXIMUM_PPR_OLD * 60 * 60))
+    ppr_min_time = str(int(time.time()) - (MAXIMUM_PPR_OLD * 60))
 
     # we retrieve the PPRs
     # in the query, we give which status we want, and from when to when
@@ -146,4 +146,4 @@ while True:
         file.write(json.dumps(output_data))
 
     print_context(FILENAME, "end of the routine")
-    time.sleep(MAXIMUM_PPR_OLD * 60 * 60 )
+    time.sleep(MAXIMUM_PPR_OLD * 60)
