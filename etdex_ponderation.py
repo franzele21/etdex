@@ -365,10 +365,12 @@ while True:
             departure_time = all_ppr[ppr_id]["departure"]
             if "," in departure_time:
                 departure_time = datetime.strptime(departure_time, "%a, %d %b %Y %H:%M:%S %Z")
-            else:
+            elif departure_time != "":
                 departure_time = datetime.strptime(departure_time, "%a %b %d %Y %H:%M:%S %Z%z")
+            else:
+                continue
             departure_time = int(time.mktime(departure_time.timetuple()))
-
+            
             arrival_time = all_ppr[ppr_id]["arrival"]
             if "," in arrival_time:
                 arrival_time = datetime.strptime(arrival_time, "%a, %d %b %Y %H:%M:%S %Z")
