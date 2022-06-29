@@ -20,7 +20,7 @@ AIRPLANE_DATABASE = "airplane.db"
 # the path of the output file
 OUTPUT_FILE = "airport_by_zone.json"
 FILENAME = os.path.basename(__file__)
-CYCLE_TIME = 180
+CYCLE_TIME = 300
 
 print_context(FILENAME, "initialization")
 
