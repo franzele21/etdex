@@ -11,7 +11,6 @@ import time
 import os
 import requests
 from functions import *
-from datetime import datetime
 
 # path to the database
 DATABASE_PATH = "airplane.db"
