@@ -65,6 +65,21 @@ list
     conn = create_connection(file)
     airplanes = query(conn, "SELECT * FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
 
+    db_status = query(conn, """
+                                INSERT INTO "AIRPLANE" 
+                                VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
+                            """)
+    query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
+    while not db_status:
+        print_context(FILENAME, f"waiting for the {file} database to be unlocked")
+        
+        time.sleep(5)
+        db_status = query(conn, f"""
+                                    INSERT INTO "AIRPLANE" 
+                                    VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
+                                """)
+        query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
+
     airplanes = airplanes.fetchall() if not isinstance(airplanes, type(None)) and airplanes else []
 
     query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")

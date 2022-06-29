@@ -128,6 +128,21 @@ while True:
     conn = create_connection(DATABASE_PATH)
     table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
 
+    db_status = query(conn, """
+                                INSERT INTO "AIRPLANE" 
+                                VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
+                            """)
+    query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
+    while not db_status:
+        print_context(FILENAME, f"waiting for the {DATABASE_PATH} database to be unlocked")
+        
+        time.sleep(5)
+        db_status = query(conn, f"""
+                                    INSERT INTO "AIRPLANE" 
+                                    VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
+                                """)
+        query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
+    
     if table_exists[0][0] == 0:
         # we have the basic parameters of a airplane (registration 
         # name, coordinate, altitude, speed and heading) qnd three more
