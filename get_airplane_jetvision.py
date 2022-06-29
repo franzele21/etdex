@@ -112,7 +112,7 @@ while True:
     auth = (user, api_key)
 
     response = requests.get('https://mlat.jetvision.de/mlat/aircraftlist.json', headers=headers, auth=auth)
-    print(response, response.text)
+    print(response, response.text, response.apparent_encoding)
 
     content = json.loads(response.text)
     
