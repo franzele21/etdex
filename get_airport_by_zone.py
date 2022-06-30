@@ -128,8 +128,13 @@ def previous_been_read(output_file):
         return previous_been_read(output_file)
 
 
+with open("auth_avdb.json") as file:
+    content = json.loads(file.read())
+    avdb_user = content["user"]
+    avdb_password = content["password"]
+
 # get all airports, and keep just the ones that have their coordinates
-response = requests.get("https://avdb.aerops.com/public/airports", auth=("ETDEX", "ijhf93**h&2eg2ge"))
+response = requests.get("https://avdb.aerops.com/public/airports", auth=(avdb_user, avdb_password))
 airports = json.loads(response.text)["data"]
 airports = filter_airports(airports)
 
