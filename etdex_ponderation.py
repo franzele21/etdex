@@ -4,7 +4,6 @@ import time
 import os
 from os.path import exists
 from functions import *
-from sqlite3 import Error
 from datetime import datetime
 
 
