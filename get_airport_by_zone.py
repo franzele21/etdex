@@ -148,6 +148,16 @@ while True:
 
     airport_in_zone = {}
     for airplane in airplanes:
+        # we verify that the data can be interpreted, if not, it will be skipped
+        try:
+            airplane["latitude"] = float(airplane["latitude"])
+            airplane["longitude"] = float(airplane["longitude"])
+            airplane["altitude"] = float(airplane["altitude"])
+            airplane["velocity"] = float(airplane["velocity"])
+            airplane["heading"] = float(airplane["heading"])
+        except:
+            continue
+
         # create the zone on which the airplane can land
         airplane_zone = create_zone((airplane["latitude"], 
                                     airplane["longitude"]),
