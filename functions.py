@@ -53,7 +53,8 @@ sqlite3.Cursor or None
         connection.commit()
         return cursor
     except sqlite3.OperationalError:
-        print("yes hello")
+        print("Error <sqlite3.OperationalError>: Database is locked")
+        return "locked"
     except Error as e:
         print(f"Error: '{e}'")
         return False
