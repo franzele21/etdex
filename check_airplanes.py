@@ -88,7 +88,7 @@ while True:
                             apInvisibleTime = '{int(time.time())}'
                             WHERE apRegis = '{airplane[0]}';
                         """)
-
+    print_context(FILENAME, "adding new airplanes")
     # add the airplane if it is really invisible in the INVISIBLE_AIRPLANE table
     airplanes = query(conn, "SELECT DISTINCT apRegis FROM \"AIRPLANE\" WHERE 1;").fetchall()
     for airplane in airplanes:
