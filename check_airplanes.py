@@ -114,7 +114,7 @@ while True:
                 last_seen = last_seen.fetchone()
                 if not isinstance(last_seen, type(None)):
                     is_in_db = query(conn, f"SELECT count(apRegis) FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = '{last_seen[0]}';")
-                    is_in_db = is_in_db.fetchall() if not isinstance(is_in_db, type(None)) else [[0]]
+                    is_in_db = is_in_db.fetchall() if is_in_db else [[0]]
 
                     if is_in_db[0][0] == 0:
                         query(conn, f"""
