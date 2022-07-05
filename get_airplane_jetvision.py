@@ -98,10 +98,40 @@ dict
 
     return new_dict
 
+def initialize_database(conn: sqlite3.Connection) -> None:
+    """
+Creates the table AIRPLANE, if it doesn't exist
+    """
+    table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
+    if table_exists[0][0] == 0:
+        # we have the basic parameters of a airplane (registration 
+        # name, coordinate, altitude, speed and heading) qnd three more
+        # aspects : when it was last seen, if it is invisible, and since
+        # when it's invisible
+        query(conn, """
+                        CREATE TABLE "AIRPLANE" ( 
+                            "apRegis" TEXT NOT NULL, 
+                            "apLatitude" REAL, 
+                            "apLongitude" REAL, 
+                            "apAltitude" REAL, 
+                            "apTime" INTEGER,
+                            "apVelocity" REAL,
+                            "apHeading" REAL,
+                            "apInvisible" INTEGER,
+                            "apInvisibleTime" INTEGER,
+                            "apSource" TEXT,
+                            CONSTRAINT unique_direction UNIQUE (apRegis, apSource),
+                            PRIMARY KEY ("apRegis", "apSource") );
+                    """)
+
 with open(AUTH_FILE) as file:
     content = json.loads(file.read())[SOURCE]
     user = content["user"]
     api_key = content["key"]
+
+conn = create_connection(DATABASE_PATH)
+initialize_database(conn)
+conn.close()
 
 while True:
     print_context(FILENAME, "begin of the routine")
@@ -109,6 +139,7 @@ while True:
     headers = {
         'Accept': 'application/json; charset=UTF-8',
     }
+    
     auth = (user, api_key)
 
     response = requests.get('https://mlat.jetvision.de/mlat/aircraftlist.json', headers=headers, auth=auth)
@@ -126,7 +157,8 @@ while True:
 
     # creates the database if it doesn't exist
     conn = create_connection(DATABASE_PATH)
-    table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
+    
+    initialize_database(conn)
 
     db_status = query(conn, """
                                 INSERT INTO "AIRPLANE" 
