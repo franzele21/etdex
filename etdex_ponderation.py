@@ -258,35 +258,35 @@ while True:
     query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
     
     # check if the table UNTREATED_TABLE exists
-    table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'UNTREATED_DATA';").fetchall()
+    table_exists = query("SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'UNTREATED_DATA';").fetchall()
     table_exists = table_exists[0][0]
 
     # if the count is equal to 0, we create both tables
     if table_exists == 0:
         print_c("creating database table")
-        query(conn, """
-                    CREATE TABLE "UNTREATED_DATA" ( 
-                        "udId" INTEGER NOT NULL,
-                        "udAirport" TEXT NOT NULL, 
-                        "udRegis" TEXT, 
-                        "udProbability" REAL, 
-                        "udSource" TEXT, 
-                        "udSource2" TEXT,
-                        "udTime" INTEGER, 
-                        PRIMARY KEY("udId" AUTOINCREMENT) 
-                    );
-                    """)
-        query(conn, """
-                    CREATE TABLE "TREATED_DATA" (
-                        "tdId" INTEGER NOT NULL,
-                        "tdAirport" TEXT NOT NULL,
-                        "tdAirplane" TEXT,
-                        "tdTime" INTEGER,
-                        "tdProb" REAL,
-                        CONSTRAINT unique_combinaison UNIQUE (tdAirport, tdAirplane),
-                        PRIMARY KEY("tdId" AUTOINCREMENT)
-                    );
-                    """)
+        query("""
+                CREATE TABLE "UNTREATED_DATA" ( 
+                    "udId" INTEGER NOT NULL,
+                    "udAirport" TEXT NOT NULL, 
+                    "udRegis" TEXT, 
+                    "udProbability" REAL, 
+                    "udSource" TEXT, 
+                    "udSource2" TEXT,
+                    "udTime" INTEGER, 
+                    PRIMARY KEY("udId" AUTOINCREMENT) 
+                );
+                """)
+        query("""
+                CREATE TABLE "TREATED_DATA" (
+                    "tdId" INTEGER NOT NULL,
+                    "tdAirport" TEXT NOT NULL,
+                    "tdAirplane" TEXT,
+                    "tdTime" INTEGER,
+                    "tdProb" REAL,
+                    CONSTRAINT unique_combinaison UNIQUE (tdAirport, tdAirplane),
+                    PRIMARY KEY("tdId" AUTOINCREMENT)
+                );
+                """)
 
     # add all airplanes coming from airTracker
     if not tracking_been_read: 
@@ -310,48 +310,48 @@ while True:
             tracked_airplane_time = tracking[tracked_airplane]["last_contact"]
 
             for possible_airport in tracking[tracked_airplane]["airport"]:
-                query(conn, f"""
-                                INSERT INTO "UNTREATED_DATA"
-                                (udAirport, udRegis, udProbability, udSource, udTime)
-                                VALUES ('{possible_airport["regis"]}', '{tracked_airplane}',
-                                '{tracked_airplane_probability}', 'airTracker', 
-                                '{tracked_airplane_time}');
-                            """)
+                query(f"""
+                            INSERT INTO "UNTREATED_DATA"
+                            (udAirport, udRegis, udProbability, udSource, udTime)
+                            VALUES ('{possible_airport["regis"]}', '{tracked_airplane}',
+                            '{tracked_airplane_probability}', 'airTracker', 
+                            '{tracked_airplane_time}');
+                        """)
 
     # here is the data from UNTREATED_DATA going to be treated, this means
     # that it will find all evidences that could refer to the same landing,
     # (first part of evidence_probability) and then it will calculate the
     # probability of this landing, by weightening them, depending from 
     # they're sources (second part of evidence_probability)
-    list_airports_name = query(conn, "SELECT udAirport FROM \"UNTREATED_DATA\" WHERE 1").fetchall()
+    list_airports_name = query("SELECT udAirport FROM \"UNTREATED_DATA\" WHERE 1").fetchall()
     list_airports_name = push_id(list_airports_name)
     done_airport = []
     for airport_name in list_airports_name:
         if airport_name not in done_airport:
             done_airport.append(airport_name)
             
-            evidences_by_airport = query(conn, f"SELECT * FROM \"UNTREATED_DATA\" WHERE udAirport='{airport_name}';")
+            evidences_by_airport = query(f"SELECT * FROM \"UNTREATED_DATA\" WHERE udAirport='{airport_name}';")
             evidences_by_airport = evidences_by_airport.fetchall()
 
             for evidence in evidence_probability(evidences_by_airport):
-                landing_exists =  query(conn, f"""
-                                                    SELECT count(tdId)
-                                                    FROM "TREATED_DATA"
-                                                    WHERE tdAirport = '{evidence["airport"]}' 
-                                                    AND tdAirplane = '{evidence["regis"]}';
-                                                """).fetchone()[0]
+                landing_exists =  query(f"""
+                                            SELECT count(tdId)
+                                            FROM "TREATED_DATA"
+                                            WHERE tdAirport = '{evidence["airport"]}' 
+                                            AND tdAirplane = '{evidence["regis"]}';
+                                        """).fetchone()[0]
                 if landing_exists == 0:
-                    query(conn, f"""
-                                    INSERT INTO "TREATED_DATA"
-                                    (tdAirport, tdAirplane, tdTime, tdProb)
-                                    VALUES ('{evidence["airport"]}', '{evidence["regis"]}', 
-                                    '{evidence["time"]}', '{evidence["prob"]}');
-                                """)
-                    query(conn, f"""
-                                    DELETE FROM "UNTREATED_DATA"
-                                    WHERE udAirport = '{evidence["airport"]}'
-                                    AND udRegis = '{evidence["regis"]}'
-                                """)
+                    query(f"""
+                            INSERT INTO "TREATED_DATA"
+                            (tdAirport, tdAirplane, tdTime, tdProb)
+                            VALUES ('{evidence["airport"]}', '{evidence["regis"]}', 
+                            '{evidence["time"]}', '{evidence["prob"]}');
+                        """)
+                    query(f"""
+                            DELETE FROM "UNTREATED_DATA"
+                            WHERE udAirport = '{evidence["airport"]}'
+                            AND udRegis = '{evidence["regis"]}'
+                        """)
 
     # here are all the PPRs going to be checked, and if one has the same 
     # destination airport and same airplane. If one same landing has be 
@@ -382,13 +382,13 @@ while True:
 
             # searching for all landings, that could have been at the present
             # or the destination airport from the PPR
-            landings = query(conn, f"""
-                                        SELECT tdId, tdTime, tdAirport 
-                                        FROM \"TREATED_DATA\" 
-                                        WHERE tdAirport = '{departing_airport}'
-                                        OR tdAirport = '{present_airport}'
-                                        AND tdAirplane = '{airplane}';
-                                    """)
+            landings = query(f"""
+                                SELECT tdId, tdTime, tdAirport 
+                                FROM \"TREATED_DATA\" 
+                                WHERE tdAirport = '{departing_airport}'
+                                OR tdAirport = '{present_airport}'
+                                AND tdAirplane = '{airplane}';
+                            """)
             landings = landings.fetchall()
 
             for landing_data in landings:
@@ -411,18 +411,18 @@ while True:
                         same_landing = True
                 
                 if same_landing:
-                    query(conn, f"""
-                                    UPDATE \"TREATED_DATA\"
-                                    SET tdProb = '1.0'
-                                    WHERE tdId = '{landing_data[0]}';
-                                """)
+                    query(f"""
+                            UPDATE \"TREATED_DATA\"
+                            SET tdProb = '1.0'
+                            WHERE tdId = '{landing_data[0]}';
+                        """)
             if len(landings) == 0:
-                query(conn, f"""
-                                INSERT INTO "TREATED_DATA"
-                                (tdAirport, tdAirplane, tdTime, tdProb)
-                                VALUES ('{departing_airport}', '{airplane}', 
-                                '{departure_time}', '{ponderation["PPR"]["default"]/100.0}');
-                            """)
+                query(f"""
+                        INSERT INTO "TREATED_DATA"
+                        (tdAirport, tdAirplane, tdTime, tdProb)
+                        VALUES ('{departing_airport}', '{airplane}', 
+                        '{departure_time}', '{ponderation["PPR"]["default"]/100.0}');
+                    """)
 
 
     if not aftn_data["been_read"]:
@@ -434,35 +434,35 @@ while True:
             aftn = aftn_data["new_aftn"][aftn_id]
             aftn = get_aftn(aftn)
 
-            landings = query(conn, f"""
-                                        SELECT *
-                                        FROM "TREATED_DATA"
-                                        WHERE tdAirplane = '{aftn["airplane"]}'
-                                        AND tdAirport = '{aftn["airport"]}';
-                                    """)
+            landings = query(f"""
+                                SELECT *
+                                FROM "TREATED_DATA"
+                                WHERE tdAirplane = '{aftn["airplane"]}'
+                                AND tdAirport = '{aftn["airport"]}';
+                            """)
             if not isinstance(landings, type(None))\
                     and len(landings.fetchall()) > 0:
                 landings = landings.fetchall()
                 for landing in landings:
                     if landing[3] - AFTN_DELTA_TIME < aftn["time"] \
                             and landing[3] + AFTN_DELTA_TIME > aftn["time"]:
-                        query(conn, f"""
-                                        UPDATE "TREATED_DATA"
-                                        SET tdProb = '1.0'
-                                        WHERE tdId = '{landing[0]}';
-                                    """)
-            else:
-                query(conn, f"""
-                                INSERT INTO "TREATED_DATA"
-                                (tdAirport, tdAirplane, tdTime, tdProb)
-                                VALUES ('{aftn["airport"]}', '{aftn["airplane"]}',
-                                '{aftn["time"]}', '{ponderation["AFTN"]["default"]/100.0}');
+                        query(f"""
+                                UPDATE "TREATED_DATA"
+                                SET tdProb = '1.0'
+                                WHERE tdId = '{landing[0]}';
                             """)
+            else:
+                query(f"""
+                        INSERT INTO "TREATED_DATA"
+                        (tdAirport, tdAirplane, tdTime, tdProb)
+                        VALUES ('{aftn["airport"]}', '{aftn["airplane"]}',
+                        '{aftn["time"]}', '{ponderation["AFTN"]["default"]/100.0}');
+                    """)
 
     # here, when an airplane appears two times, but not at the same airport
     # we will keep the most probable one. If there isn't a most probable
     # one we will keep them all
-    all_landings = query(conn, "SELECT * FROM \"TREATED_DATA\" WHERE 1;")
+    all_landings = query("SELECT * FROM \"TREATED_DATA\" WHERE 1;")
     for landing in all_landings:
         landing_id = landing[0]         # get the id
         airplane_name = landing[2]      # get the registration
@@ -470,12 +470,12 @@ while True:
         most_prob_landing = landing_id
         prob_changed = False
 
-        same_airplanes = query(conn, f"""
-                                        SELECT * 
-                                        FROM \"TREATED_DATA\" 
-                                        WHERE tdAirplane = '{airplane_name}'
-                                        AND tdId != '{landing_id}'
-                                    """)
+        same_airplanes = query(f"""
+                                    SELECT * 
+                                    FROM \"TREATED_DATA\" 
+                                    WHERE tdAirplane = '{airplane_name}'
+                                    AND tdId != '{landing_id}'
+                                """)
         if not isinstance(same_airplanes, type(None)):
             same_airplanes = same_airplanes.fetchall()
 
@@ -486,18 +486,18 @@ while True:
                     prob_changed = True
             if prob_changed:
                 delta_landing = DELAY_BETWEEN_LANDINGS * 60 * 60
-                landing_time = query(conn, f"""
-                                                SELECT tdTime 
-                                                FROM \"TREATED_DATA\" 
-                                                WHERE tdId = '{most_prob_landing}';
-                                            """).fetchone()[0]
+                landing_time = query(f"""
+                                        SELECT tdTime 
+                                        FROM \"TREATED_DATA\" 
+                                        WHERE tdId = '{most_prob_landing}';
+                                    """).fetchone()[0]
 
-                query(conn, f"""
-                                DELETE FROM \"TREATED_DATA\"
-                                WHERE tdId != '{most_prob_landing}'
-                                AND tdAirplane = '{airplane_name}'
-                                AND ABS(tdTime - '{landing_time}') <= '{delta_landing}';
-                            """)
+                query(f"""
+                        DELETE FROM \"TREATED_DATA\"
+                        WHERE tdId != '{most_prob_landing}'
+                        AND tdAirplane = '{airplane_name}'
+                        AND ABS(tdTime - '{landing_time}') <= '{delta_landing}';
+                    """)
     conn.close()
 
     print_c("end of the routine")

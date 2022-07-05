@@ -67,26 +67,26 @@ list
 """
     conn = create_connection(file)
     query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
-    airplanes = query(conn, "SELECT * FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
+    airplanes = query("SELECT * FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
 
-    db_status = query(conn, """
-                                INSERT INTO "AIRPLANE" 
-                                VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
-                            """)
-    query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
+    db_status = query("""
+                        INSERT INTO "AIRPLANE" 
+                        VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
+                    """)
+    query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
     while db_status == "locked":
         print_c("waiting for the {file} database to be unlocked")
         
         time.sleep(5)
-        db_status = query(conn, f"""
-                                    INSERT INTO "AIRPLANE" 
-                                    VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
-                                """)
-        query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
+        db_status = query(f"""
+                            INSERT INTO "AIRPLANE" 
+                            VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
+                        """)
+        query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
 
     airplanes = airplanes.fetchall() if not isinstance(airplanes, type(None)) and airplanes else []
 
-    query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
+    query("DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
     
     conn.close()
     return airplanes

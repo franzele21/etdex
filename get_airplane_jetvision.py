@@ -105,27 +105,27 @@ def initialize_database(conn: sqlite3.Connection) -> None:
     """
 Creates the table AIRPLANE, if it doesn't exist
     """
-    table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
+    table_exists = query("SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
     if table_exists[0][0] == 0:
         # we have the basic parameters of a airplane (registration 
         # name, coordinate, altitude, speed and heading) qnd three more
         # aspects : when it was last seen, if it is invisible, and since
         # when it's invisible
-        query(conn, """
-                        CREATE TABLE "AIRPLANE" ( 
-                            "apRegis" TEXT NOT NULL, 
-                            "apLatitude" REAL, 
-                            "apLongitude" REAL, 
-                            "apAltitude" REAL, 
-                            "apTime" INTEGER,
-                            "apVelocity" REAL,
-                            "apHeading" REAL,
-                            "apInvisible" INTEGER,
-                            "apInvisibleTime" INTEGER,
-                            "apSource" TEXT,
-                            CONSTRAINT unique_direction UNIQUE (apRegis, apSource),
-                            PRIMARY KEY ("apRegis", "apSource") );
-                    """)
+        query("""
+                CREATE TABLE "AIRPLANE" ( 
+                    "apRegis" TEXT NOT NULL, 
+                    "apLatitude" REAL, 
+                    "apLongitude" REAL, 
+                    "apAltitude" REAL, 
+                    "apTime" INTEGER,
+                    "apVelocity" REAL,
+                    "apHeading" REAL,
+                    "apInvisible" INTEGER,
+                    "apInvisibleTime" INTEGER,
+                    "apSource" TEXT,
+                    CONSTRAINT unique_direction UNIQUE (apRegis, apSource),
+                    PRIMARY KEY ("apRegis", "apSource") );
+            """)
 
 with open(AUTH_FILE) as file:
     content = json.loads(file.read())[SOURCE]
@@ -133,6 +133,7 @@ with open(AUTH_FILE) as file:
     api_key = content["key"]
 
 conn = create_connection(DATABASE_PATH)
+query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
 initialize_database(conn)
 conn.close()
 
@@ -162,38 +163,38 @@ while True:
     conn = create_connection(DATABASE_PATH)
     query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
 
-    db_status = query(conn, """
-                                INSERT INTO "AIRPLANE" 
-                                VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
-                            """)
+    db_status = query("""
+                        INSERT INTO "AIRPLANE" 
+                        VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
+                    """)
 
-    query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
+    query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
     while db_status == "locked":
         print_context("waiting for the {DATABASE_PATH} database to be unlocked")
         
         time.sleep(5)
-        db_status = query(conn, f"""
-                                    INSERT INTO "AIRPLANE" 
-                                    VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
-                                """)
-        query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
+        db_status = query(f"""
+                            INSERT INTO "AIRPLANE" 
+                            VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
+                        """)
+        query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
     
     initialize_database(conn)
 
     for airplane_name in airplane_data.keys():
-        unique_airplane = query(conn, f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
+        unique_airplane = query(f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
         tmp_airplane = airplane_data[airplane_name]
 
         # if the airplane isn't in the database, we add it
         if not unique_airplane:
-            query(conn, f"""
-                            INSERT INTO "AIRPLANE" VALUES
-                            ('{airplane_name}', '{tmp_airplane["latitude"]}', 
-                            '{tmp_airplane["longitude"]}', '{tmp_airplane["altitude"]}', 
-                            '{int(tmp_airplane["time"])}', '{tmp_airplane["velocity"]}',
-                            '{tmp_airplane["heading"]}', '0', '0', '{SOURCE}');
-                            
-                        """)
+            query(f"""
+                    INSERT INTO "AIRPLANE" VALUES
+                    ('{airplane_name}', '{tmp_airplane["latitude"]}', 
+                    '{tmp_airplane["longitude"]}', '{tmp_airplane["altitude"]}', 
+                    '{int(tmp_airplane["time"])}', '{tmp_airplane["velocity"]}',
+                    '{tmp_airplane["heading"]}', '0', '0', '{SOURCE}');
+                    
+                """)
         else:
             # if it does exists, we update it 
             # here we can see can we put apInvisible and apInivisibleTime 
@@ -201,34 +202,34 @@ while True:
             # time, it will be registered as disappeared, but if it is 
             # in the list, it is reachable by ADS-B, so it isn't
             # invisible
-            query(conn, f"""
-                            UPDATE "AIRPLANE"
-                            SET apLatitude = '{tmp_airplane["latitude"]}',
-                            apLongitude = '{tmp_airplane["longitude"]}',
-                            apAltitude = '{tmp_airplane["altitude"]}',
-                            apTime = '{tmp_airplane["time"]}',
-                            apHeading = '{tmp_airplane["heading"]}',
-                            apVelocity = '{tmp_airplane["velocity"]}',
-                            apInvisible = '0',
-                            apInvisibleTime = '0'
-                            WHERE apRegis = '{airplane_name}'
-                            AND apSource = '{SOURCE}';
-                        """)
+            query(f"""
+                    UPDATE "AIRPLANE"
+                    SET apLatitude = '{tmp_airplane["latitude"]}',
+                    apLongitude = '{tmp_airplane["longitude"]}',
+                    apAltitude = '{tmp_airplane["altitude"]}',
+                    apTime = '{tmp_airplane["time"]}',
+                    apHeading = '{tmp_airplane["heading"]}',
+                    apVelocity = '{tmp_airplane["velocity"]}',
+                    apInvisible = '0',
+                    apInvisibleTime = '0'
+                    WHERE apRegis = '{airplane_name}'
+                    AND apSource = '{SOURCE}';
+                """)
 
     # if the airplane isn't to be seen by the ADS-B system,
     # it will be registered as invisible
-    airplanes = query(conn, "SELECT apRegis, apSource FROM \"AIRPLANE\" WHERE apInvisible = '0';")
+    airplanes = query("SELECT apRegis, apSource FROM \"AIRPLANE\" WHERE apInvisible = '0';")
     for airplane in airplanes:
         if airplane[1] == SOURCE: 
             airplane_name = airplane[0]
             if airplane_name not in airplane_data.keys():
-                query(conn, f"""
-                                UPDATE "AIRPLANE"
-                                SET apInvisible = '1',
-                                apInvisibleTime = '{int(time.time())}'
-                                WHERE apRegis = '{airplane_name}'
-                                AND apSource = '{SOURCE}';
-                            """)
+                query(f"""
+                        UPDATE "AIRPLANE"
+                        SET apInvisible = '1',
+                        apInvisibleTime = '{int(time.time())}'
+                        WHERE apRegis = '{airplane_name}'
+                        AND apSource = '{SOURCE}';
+                    """)
     conn.close()
 
     print_c("end of the routine")
