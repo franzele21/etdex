@@ -175,27 +175,6 @@ while True:
                                 """)
         query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
     
-    if table_exists[0][0] == 0:
-        # we have the basic parameters of a airplane (registration 
-        # name, coordinate, altitude, speed and heading) qnd three more
-        # aspects : when it was last seen, if it is invisible, and since
-        # when it's invisible
-        query(conn, """
-                        CREATE TABLE "AIRPLANE" ( 
-                            "apRegis" TEXT NOT NULL, 
-                            "apLatitude" REAL, 
-                            "apLongitude" REAL, 
-                            "apAltitude" REAL, 
-                            "apTime" INTEGER,
-                            "apVelocity" REAL,
-                            "apHeading" REAL,
-                            "apInvisible" INTEGER,
-                            "apInvisibleTime" INTEGER,
-                            "apSource" TEXT,
-                            CONSTRAINT unique_direction UNIQUE (apRegis, apSource),
-                            PRIMARY KEY ("apRegis", "apSource") );
-                    """)
-
     for airplane_name in airplane_data.keys():
         unique_airplane = query(conn, f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';").fetchone()
         tmp_airplane = airplane_data[airplane_name]
