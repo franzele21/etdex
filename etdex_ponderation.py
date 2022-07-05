@@ -228,7 +228,7 @@ with open(PONDERATION_FILE) as ponderation_file:
     ponderation = json.loads(ponderation_file.read())
 
 while True:
-    print_c(FILENAME ,"begin of the routine")
+    print_c("begin of the routine")
 
     if exists(POSSIBLE_LANDINGS_ADSB_FILE):
         with open(POSSIBLE_LANDINGS_ADSB_FILE) as tracking_file:
