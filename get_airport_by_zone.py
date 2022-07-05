@@ -85,6 +85,7 @@ list
 
     query(conn, "DELETE FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
     
+    conn.close()
     return airplanes
 
 
