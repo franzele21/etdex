@@ -176,11 +176,11 @@ while True:
         query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
     
     for airplane_name in airplane_data.keys():
-        unique_airplane = query(conn, f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';").fetchone()
+        unique_airplane = query(conn, f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
         tmp_airplane = airplane_data[airplane_name]
 
         # if the airplane isn't in the database, we add it
-        if unique_airplane == None:
+        if not unique_airplane:
             query(conn, f"""
                             INSERT INTO "AIRPLANE" VALUES
                             ('{airplane_name}', '{tmp_airplane["latitude"]}', 
