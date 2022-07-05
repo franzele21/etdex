@@ -37,7 +37,7 @@ while True:
                     """)
     query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
     while db_status == "locked":
-        print_c("waiting for the {DATABASE_PATH} database to be unlocked")
+        print_c(f"waiting for the {DATABASE_PATH} database to be unlocked")
         
         time.sleep(5)
         db_status = query(f"""
@@ -71,7 +71,7 @@ while True:
     table_exists = query("SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
 
     if table_exists[0][0] == 0:
-        print_c("waiting for the AIRPLANE tabl to be created")
+        print_c("waiting for the AIRPLANE table to be created")
         time.sleep(CYCLE_TIME)
         continue
 
@@ -102,10 +102,10 @@ while True:
             if 0 in same_airplane:
                 # with those deletion, we keep the only sources that can still track
                 query(f"""
-                                DELETE FROM \"AIRPLANE\"
-                                WHERE apRegis = '{airplane_name}'
-                                AND apInvisible = '1';
-                            """)
+                        DELETE FROM \"AIRPLANE\"
+                        WHERE apRegis = '{airplane_name}'
+                        AND apInvisible = '1';
+                    """)
             else:
                 last_seen = query(f"""
                                     SELECT * FROM "AIRPLANE"

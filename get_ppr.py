@@ -101,7 +101,7 @@ while True:
     if response.text != "":
         multiple_ppr = json.loads(response.text)
     else:
-        print_c("{response} couldn't load any PPRs")
+        print_c(f"{response} couldn't load any PPRs")
         multiple_ppr = ""
 
     been_read, last_index = previous_been_read(OUTPUT_FILE)

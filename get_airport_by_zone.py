@@ -148,7 +148,7 @@ while True:
 
     # get the airplanes that are inivisble by the ADS-B system
     airplanes = format_airplanes(get_airplanes(AIRPLANE_DATABASE))
-    print_c("number of new invisible airplane: {len(airplanes)}")
+    print_c(f"number of new invisible airplane: {len(airplanes)}")
 
     airport_in_zone = {}
     for airplane in airplanes:

@@ -170,7 +170,7 @@ while True:
 
     query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
     while db_status == "locked":
-        print_context("waiting for the {DATABASE_PATH} database to be unlocked")
+        print_context(f"waiting for the {DATABASE_PATH} database to be unlocked")
         
         time.sleep(5)
         db_status = query(f"""

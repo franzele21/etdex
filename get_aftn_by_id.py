@@ -78,7 +78,7 @@ def traffic_search(access):
         else:
             is_not_max = False
 
-    print_c("last id = {queries['id']}")
+    print_c(f"last id = {queries['id']}")
     with open(MAX_ID_FILE, "w") as file:
         file.write(str(queries["id"]))
 
