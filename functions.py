@@ -52,6 +52,8 @@ sqlite3.Cursor or None
         cursor.execute(query_)
         connection.commit()
         return cursor
+    except sqlite3.OperationalError:
+        print("yes hello")
     except Error as e:
         print(f"Error: '{e}'")
         return False
