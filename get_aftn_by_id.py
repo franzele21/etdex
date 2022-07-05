@@ -13,7 +13,9 @@ with open(MAX_ID_FILE) as file:
 FILENAME = os.path.basename(__file__)
 CYCLE_TIME = 3600
 
-print_context(FILENAME, "initialization")
+print_c = lambda text : print_context(FILENAME, text)
+
+print_c("initialization")
 
 def read_token_access_file(access_file):
     with open(access_file) as file:
@@ -76,7 +78,7 @@ def traffic_search(access):
         else:
             is_not_max = False
 
-    print_context(FILENAME, F"last id = {queries['id']}")
+    print_c("last id = {queries['id']}")
     with open(MAX_ID_FILE, "w") as file:
         file.write(str(queries["id"]))
 
@@ -97,7 +99,7 @@ def traffic_search(access):
 
 access = get_access_token()
 while True:
-    print_context(FILENAME, "begin of the routine")
+    print_c("begin of the routine")
 
     if time.time() > int(access["expiration_date"]):
         print("getting a new key...")
@@ -108,5 +110,5 @@ while True:
 
     traffic_search(access)
 
-    print_context(FILENAME, "end of the routine")
+    print_c("end of the routine")
     time.sleep(CYCLE_TIME)

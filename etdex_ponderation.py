@@ -25,7 +25,9 @@ AFTN_FILE = "data_traffic.json"
 FILENAME = os.path.basename(__file__)
 CYCLE_TIME = 900                        # in seconds
 
-print_context(FILENAME, "initialization")
+print_c = lambda text : print_context(FILENAME, text)
+
+print_c("initialization")
 
 
 def push_id(list_: list) -> list:
@@ -226,7 +228,7 @@ with open(PONDERATION_FILE) as ponderation_file:
     ponderation = json.loads(ponderation_file.read())
 
 while True:
-    print_context(FILENAME ,"begin of the routine")
+    print_c(FILENAME ,"begin of the routine")
 
     if exists(POSSIBLE_LANDINGS_ADSB_FILE):
         with open(POSSIBLE_LANDINGS_ADSB_FILE) as tracking_file:
@@ -260,7 +262,7 @@ while True:
 
     # if the count is equal to 0, we create both tables
     if table_exists == 0:
-        print_context(FILENAME, "creating database table")
+        print_c("creating database table")
         query(conn, """
                     CREATE TABLE "UNTREATED_DATA" ( 
                         "udId" INTEGER NOT NULL,
@@ -497,5 +499,5 @@ while True:
                             """)
     conn.close()
 
-    print_context(FILENAME, "end of the routine")
+    print_c("end of the routine")
     time.sleep(CYCLE_TIME)

@@ -21,10 +21,12 @@ DATABASE_PATH = "airplane.db"
 FILENAME = os.path.basename(__file__)
 CYCLE_TIME = 100 
 
-print_context(FILENAME, "initialization")
+print_c = lambda text : print_context(FILENAME, text)
+
+print_c("initialization")
 
 while True:
-    print_context(FILENAME, "begin of the routine")
+    print_c("begin of the routine")
 
     conn = create_connection(DATABASE_PATH)
 
@@ -34,7 +36,7 @@ while True:
                             """)
     query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
     while db_status == "locked":
-        print_context(FILENAME, f"waiting for the {DATABASE_PATH} database to be unlocked")
+        print_c("waiting for the {DATABASE_PATH} database to be unlocked")
         
         time.sleep(5)
         db_status = query(conn, f"""
@@ -68,7 +70,7 @@ while True:
     table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
 
     if table_exists[0][0] == 0:
-        print_context(FILENAME, "waiting for the AIRPLANE tabl to be created")
+        print_c("waiting for the AIRPLANE tabl to be created")
         time.sleep(CYCLE_TIME)
         continue
 
@@ -88,7 +90,7 @@ while True:
                             apInvisibleTime = '{int(time.time())}'
                             WHERE apRegis = '{airplane[0]}';
                         """)
-    print_context(FILENAME, "adding new airplanes")
+    print_c("adding new airplanes")
     # add the airplane if it is really invisible in the INVISIBLE_AIRPLANE table
     airplanes = query(conn, "SELECT DISTINCT apRegis FROM \"AIRPLANE\" WHERE 1;").fetchall()
     for airplane in airplanes:
@@ -176,5 +178,5 @@ while True:
 
     conn.close()
 
-    print_context(FILENAME, "end of the routine")
+    print_c("end of the routine")
     time.sleep(CYCLE_TIME)

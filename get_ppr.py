@@ -27,7 +27,9 @@ PPR_STATUS = "confirmed"
 OUTPUT_FILE = "output_ppr.json"
 FILENAME = os.path.basename(__file__)
 
-print_context(FILENAME, "initialization")
+print_c = lambda text : print_context(FILENAME, text)
+
+print_c("initialization")
 
 def previous_been_read(output_file):
     try:
@@ -73,7 +75,7 @@ airports = json.loads(response.text)["data"]
 airports_name = [airport["name"] for airport in airports]
 
 while True:
-    print_context(FILENAME, "begin of the routine")
+    print_c("begin of the routine")
 
     ppr_max_time = str(int(time.time()))
     ppr_min_time = str(int(time.time()) - (MAXIMUM_PPR_OLD * 60))
@@ -91,7 +93,7 @@ while True:
                             params=search_parameters,
                             auth=(user_ppr, password_ppr))
     except ConnectionError:
-        print_context(FILENAME, "ConnectionError: will wait some 15 seconds to resolve it")
+        print_c("ConnectionError: will wait some 15 seconds to resolve it")
         time.sleep(15)
         continue
 
@@ -99,7 +101,7 @@ while True:
     if response.text != "":
         multiple_ppr = json.loads(response.text)
     else:
-        print_context(FILENAME, f"{response} couldn't load any PPRs")
+        print_c("{response} couldn't load any PPRs")
         multiple_ppr = ""
 
     been_read, last_index = previous_been_read(OUTPUT_FILE)
@@ -152,5 +154,5 @@ while True:
     with open(OUTPUT_FILE, "w+") as file:
         file.write(json.dumps(output_data))
 
-    print_context(FILENAME, "end of the routine")
+    print_c("end of the routine")
     time.sleep(MAXIMUM_PPR_OLD * 60)

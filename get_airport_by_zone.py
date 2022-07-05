@@ -24,7 +24,9 @@ AUTH_AVDB_FILE = "auth_avdb.json"
 FILENAME = os.path.basename(__file__)
 CYCLE_TIME = 300
 
-print_context(FILENAME, "initialization")
+print_c = lambda text : print_context(FILENAME, text)
+
+print_c("initialization")
 
 def filter_airports(airports: list) -> list:
     """
@@ -72,7 +74,7 @@ list
                             """)
     query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
     while db_status == "locked":
-        print_context(FILENAME, f"waiting for the {file} database to be unlocked")
+        print_c("waiting for the {file} database to be unlocked")
         
         time.sleep(5)
         db_status = query(conn, f"""
@@ -125,7 +127,7 @@ def previous_been_read(output_file):
     except FileNotFoundError:
         return True
     except JSONDecodeError:
-        print_context(FILENAME, f"JSONDecodeError: will wait that {OUTPUT_FILE} will be ready")
+        print_c("JSONDecodeError: will wait that {OUTPUT_FILE} will be ready")
         time.sleep(60)
         return previous_been_read(output_file)
 
@@ -141,11 +143,11 @@ airports = json.loads(response.text)["data"]
 airports = filter_airports(airports)
 
 while True:
-    print_context(FILENAME, "begin of the routine")
+    print_c("begin of the routine")
 
     # get the airplanes that are inivisble by the ADS-B system
     airplanes = format_airplanes(get_airplanes(AIRPLANE_DATABASE))
-    print_context(FILENAME, f"number of new invisible airplane: {len(airplanes)}")
+    print_c("number of new invisible airplane: {len(airplanes)}")
 
     airport_in_zone = {}
     for airplane in airplanes:
@@ -199,5 +201,5 @@ while True:
     with open(OUTPUT_FILE, "w+") as file:
         file.write(json.dumps(output_data, indent=2))
 
-    print_context(FILENAME, "end of the routine")
+    print_c("end of the routine")
     time.sleep(CYCLE_TIME)

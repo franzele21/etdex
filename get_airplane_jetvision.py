@@ -20,7 +20,10 @@ AUTH_FILE = "auth_api.json"
 FILENAME = os.path.basename(__file__)
 CYCLE_TIME = 30
 
-print_context(FILENAME, "initialization")
+print_c = lambda text : print_context(FILENAME, text)
+
+
+print_c("initialization")
 
 def to_dict_by_callsign(airplane_list: list, callsign: str, 
                         latitude: int, longitude: int, 
@@ -134,7 +137,7 @@ initialize_database(conn)
 conn.close()
 
 while True:
-    print_context(FILENAME, "begin of the routine")
+    print_c("begin of the routine")
 
     headers = {
         'Accept': 'application/json; charset=UTF-8',
@@ -145,8 +148,8 @@ while True:
     response = requests.get('https://mlat.jetvision.de/mlat/aircraftlist.json', headers=headers, auth=auth)
 
     if response.status_code != 200:
-        print_context(FILENAME, f"ERROR: there was a problem during the request (statuscode: {response.status_code})")
-        print_context(FILENAME, "anormal end of the routine")
+        print_context("ERROR: there was a problem during the request (statuscode: {response.status_code})")
+        print_c("anormal end of the routine")
         time.sleep(CYCLE_TIME)
         continue
 
@@ -165,7 +168,7 @@ while True:
 
     query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
     while db_status == "locked":
-        print_context(FILENAME, f"waiting for the {DATABASE_PATH} database to be unlocked")
+        print_context("waiting for the {DATABASE_PATH} database to be unlocked")
         
         time.sleep(5)
         db_status = query(conn, f"""
@@ -227,6 +230,6 @@ while True:
                             """)
     conn.close()
 
-    print_context(FILENAME, "end of the routine")
+    print_c("end of the routine")
     # it will pause 30 seconds, so we won't have any problem with the APIs
     time.sleep(CYCLE_TIME)
