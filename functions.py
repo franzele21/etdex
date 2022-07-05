@@ -31,7 +31,7 @@ sqlite3.Connection or None
 
     return connection
 
-def query(connection: sqlite3.Connection , query_: str) -> sqlite3.Cursor: #|None
+def query_to_bdd(connection: sqlite3.Connection, file: str, query_: str) -> sqlite3.Cursor: #|None
     """
 Makes a query to a database
 
@@ -39,6 +39,8 @@ Parameters
 ----------
 connection : sqlite3.Connection
     Connection to the database on wich the query has to be made
+file : str
+    FIle which makes the query
 query_ : str
     Query to be done on the database
 
@@ -53,9 +55,10 @@ sqlite3.Cursor or None
         connection.commit()
         return cursor
     except sqlite3.OperationalError:
+        print_context(file, "Error: the database is locked", True)
         return "locked"
     except Error as e:
-        print(f"Error: '{e}'")
+        print_context(file, f"Error: '{e}'", True)
         return False
 
 class bcolors:
@@ -67,10 +70,11 @@ class bcolors:
     get_ppr = "\033[1;95m"                      # purple
     get_aftn_by_id = "\033[1;93m"               # yellow
     get_airport_by_zone = "\033[1;36m"          # cyan
+    error = " \u001b[31m"                       # red
     default = "\033[1;37m"
 
 
-def print_context(file: str, message: str) -> None:
+def print_context(file: str, message: str, is_error: bool=False) -> None:
     """
 Use to print context from a file, with color for each file
 The print format is :
@@ -82,6 +86,8 @@ file : str
     The file that needs to print context
 message : str
     The content that needs to be printed
+is_error : bool
+    If true, the message is an error message
 
 Returns
 -------
@@ -97,5 +103,8 @@ None
     color = getattr(bcolors, file_class)
     output_file = f"{color}{file}{bcolors.reset}:"
     output_file = output_file.ljust(45)
+
+    if is_error:
+        message = f"{bcolors.error}{message}"
 
     print(f"{output_time} | {output_file} {message}")
