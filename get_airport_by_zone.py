@@ -66,6 +66,7 @@ list
     Airplanes of the file
 """
     conn = create_connection(file)
+    query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
     airplanes = query(conn, "SELECT * FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
 
     db_status = query(conn, """

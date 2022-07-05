@@ -29,6 +29,7 @@ while True:
     print_c("begin of the routine")
 
     conn = create_connection(DATABASE_PATH)
+    query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
 
     db_status = query(conn, """
                                 INSERT INTO "AIRPLANE" 

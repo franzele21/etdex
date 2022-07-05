@@ -160,6 +160,7 @@ while True:
 
     # creates the database if it doesn't exist
     conn = create_connection(DATABASE_PATH)
+    query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
 
     db_status = query(conn, """
                                 INSERT INTO "AIRPLANE" 

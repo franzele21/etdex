@@ -255,7 +255,8 @@ while True:
         aftn_data = {"been_read": True}
 
     conn = create_connection(DATABASE_PATH)
-
+    query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
+    
     # check if the table UNTREATED_TABLE exists
     table_exists = query(conn, "SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'UNTREATED_DATA';").fetchall()
     table_exists = table_exists[0][0]
