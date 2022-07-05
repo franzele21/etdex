@@ -20,6 +20,7 @@ from in_polygon import is_inside_polygon
 AIRPLANE_DATABASE = "airplane.db"
 # the path of the output file
 OUTPUT_FILE = "airport_by_zone.json"
+AUTH_AVDB_FILE = "auth_avdb.json"
 FILENAME = os.path.basename(__file__)
 CYCLE_TIME = 300
 
@@ -128,7 +129,7 @@ def previous_been_read(output_file):
         return previous_been_read(output_file)
 
 
-with open("auth_avdb.json") as file:
+with open(AUTH_AVDB_FILE) as file:
     content = json.loads(file.read())
     avdb_user = content["user"]
     avdb_password = content["password"]
