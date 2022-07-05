@@ -162,18 +162,19 @@ while True:
 
     db_status = query(conn, """
                                 INSERT INTO "AIRPLANE" 
-                                VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
+                                VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
                             """)
-    query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
+    print(db_status)
+    query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
     while not db_status:
         print_context(FILENAME, f"waiting for the {DATABASE_PATH} database to be unlocked")
         
         time.sleep(5)
         db_status = query(conn, f"""
                                     INSERT INTO "AIRPLANE" 
-                                    VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
+                                    VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
                                 """)
-        query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
+        query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
     
     for airplane_name in airplane_data.keys():
         unique_airplane = query(conn, f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
