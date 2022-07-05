@@ -56,7 +56,7 @@ dict
     """
     new_dict = {}
     for i in airplane_list:
-
+        print(i)
 
         # in this part, we are going to see if all the data is available
         latitude_value = i[latitude] if not isinstance(i[latitude], str) else eval(i[latitude])
@@ -124,10 +124,10 @@ while True:
         time.sleep(CYCLE_TIME)
         continue
 
-    content = json.loads(response.text)
-    
+    content = json.loads(response.text)["positions"]
+
     # create a dict from the api data, indexed by they're licence number 
-    airplane_data = to_dict_by_callsign(content, "reg", "lat", "lon", "trk", "alt", "spd", "uti")
+    airplane_data = to_dict_by_callsign(content, "fa_flight_id", "lat", "lon", "trk", "alt", "spd", "uti")
 
     # creates the database if it doesn't exist
     conn = create_connection(DATABASE_PATH)
