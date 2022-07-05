@@ -157,14 +157,12 @@ while True:
 
     # creates the database if it doesn't exist
     conn = create_connection(DATABASE_PATH)
-    
-    initialize_database(conn)
 
     db_status = query(conn, """
                                 INSERT INTO "AIRPLANE" 
                                 VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
                             """)
-    print(db_status)
+
     query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
     while not db_status:
         print_context(FILENAME, f"waiting for the {DATABASE_PATH} database to be unlocked")
@@ -176,6 +174,8 @@ while True:
                                 """)
         query(conn, f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
     
+    initialize_database(conn)
+
     for airplane_name in airplane_data.keys():
         unique_airplane = query(conn, f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
         tmp_airplane = airplane_data[airplane_name]
