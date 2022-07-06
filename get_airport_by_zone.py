@@ -69,13 +69,13 @@ list
     query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
     airplanes = query("SELECT * FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
 
-    db_status = query("""
+    db_status = query(f"""
                         INSERT INTO "AIRPLANE" 
                         VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
                     """)
     query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
     while db_status == "locked":
-        print_c("waiting for the {file} database to be unlocked")
+        print_c(f"waiting for the {file} database to be unlocked")
         
         time.sleep(5)
         db_status = query(f"""
@@ -128,7 +128,7 @@ def previous_been_read(output_file):
     except FileNotFoundError:
         return True
     except JSONDecodeError:
-        print_c("JSONDecodeError: will wait that {OUTPUT_FILE} will be ready")
+        print_c(f"JSONDecodeError: will wait that {OUTPUT_FILE} will be ready")
         time.sleep(60)
         return previous_been_read(output_file)
 
