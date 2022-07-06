@@ -78,6 +78,7 @@ while True:
                     apInvisibleTime = '{int(time.time())}'
                     WHERE apRegis = '{airplane[0]}';
                 """)
+
     print_c("adding new airplanes")
     # add the airplane if it is really invisible in the INVISIBLE_AIRPLANE table
     airplanes = query("SELECT DISTINCT apRegis FROM \"AIRPLANE\" WHERE 1;").fetchall()
