@@ -163,13 +163,13 @@ while True:
     conn = create_connection(DATABASE_PATH)
     query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
 
-
-    wait_unlock_db(query, DATABASE_PATH, FILENAME, SOURCE)
-
     initialize_database(conn)
 
-    print_c(f"number of airplanes: {len(airplane_data.keys())}")
+    new_airplane_c, updated_airplane_c, invisible_airplane_c = 0, 0, 0
     for airplane_name in airplane_data.keys():
+
+        wait_unlock_db(query, DATABASE_PATH, FILENAME, SOURCE)
+
         unique_airplane = query(f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
         unique_airplane = True if len(unique_airplane.fetchall()) == 0 else False
         tmp_airplane = airplane_data[airplane_name]
@@ -184,6 +184,7 @@ while True:
                     '{tmp_airplane["heading"]}', '0', '0', '{SOURCE}');
                     
                 """)
+            new_airplane_c += 1
         else:
             # if it does exists, we update it 
             # here we can see can we put apInvisible and apInivisibleTime 
@@ -204,6 +205,8 @@ while True:
                     WHERE apRegis = '{airplane_name}'
                     AND apSource = '{SOURCE}';
                 """)
+            updated_airplane_c += 1
+            
 
     # if the airplane isn't to be seen by the ADS-B system,
     # it will be registered as invisible
@@ -219,8 +222,10 @@ while True:
                         WHERE apRegis = '{airplane_name}'
                         AND apSource = '{SOURCE}';
                     """)
+                invisible_airplane_c += 1
     conn.close()
 
+    print_c(f"new airplanes: {new_airplane_c}, updated airplanes: {updated_airplane_c}, new invisible airplanes: {invisible_airplane_c}")
     print_c("end of the routine")
     # it will pause 30 seconds, so we won't have any problem with the APIs
     time.sleep(CYCLE_TIME)
