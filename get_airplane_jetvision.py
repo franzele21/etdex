@@ -168,7 +168,7 @@ while True:
 
     initialize_database(conn)
 
-    print_c(f"Number of new airplanes: {len(airplane_data.keys())}")
+    print_c(f"number of airplanes: {len(airplane_data.keys())}")
     for airplane_name in airplane_data.keys():
         unique_airplane = query(f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
         unique_airplane = True if len(unique_airplane.fetchall()) == 0 else False
