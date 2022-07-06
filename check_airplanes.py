@@ -125,6 +125,7 @@ while True:
     # add airplanes that are too slow (= on the ground)
     airplanes = query(f"SELECT DISTINCT apRegis FROM \"AIRPLANE\" WHERE apVelocity < '{MIN_VELOCITY}';").fetchall()
     for airplane in airplanes:
+        wait_unlock_db(query, DATABASE_PATH, FILENAME)
         airplane = airplane[0]
         same_airplanes_speed = query(f"SELECT apVelocity FROM \"AIRPLANE\" WHERE apRegis = '{airplane}';").fetchall()
         
