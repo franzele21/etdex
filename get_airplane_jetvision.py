@@ -164,7 +164,7 @@ while True:
     query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
 
     print("oui")
-    db_status = query("""
+    db_status = query(f"""
                         INSERT INTO "AIRPLANE" 
                         VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
                     """)
