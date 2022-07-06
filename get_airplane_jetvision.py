@@ -167,7 +167,7 @@ while True:
     wait_unlock_db(query, DATABASE_PATH, FILENAME, SOURCE)
 
     initialize_database(conn)
-
+    print(len(airplane_data.keys()))
     for airplane_name in airplane_data.keys():
         unique_airplane = query(f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
         tmp_airplane = airplane_data[airplane_name]
