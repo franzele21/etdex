@@ -163,23 +163,9 @@ while True:
     conn = create_connection(DATABASE_PATH)
     query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
 
-    print("oui")
-    db_status = query(f"""
-                        INSERT INTO "AIRPLANE" 
-                        VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
-                    """)
 
-    query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
-    while db_status == "locked":
-        print_context(f"waiting for the {DATABASE_PATH} database to be unlocked")
-        
-        time.sleep(5)
-        db_status = query(f"""
-                            INSERT INTO "AIRPLANE" 
-                            VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
-                        """)
-        query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
-    print("non")
+    wait_unlock_db(query, DATABASE_PATH, FILENAME, SOURCE)
+
     initialize_database(conn)
 
     for airplane_name in airplane_data.keys():
