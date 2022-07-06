@@ -72,6 +72,7 @@ while True:
     for airplane in airplanes:
         delta_time = int(time.time()) - airplane[1]
         if delta_time > int(DELAY_INVISIBLE * 60):
+            wait_unlock_db(query, DATABASE_PATH, FILENAME)
             query(f"""
                     UPDATE "AIRPLANE"
                     SET apInvisible = '1',
@@ -83,6 +84,7 @@ while True:
     # add the airplane if it is really invisible in the INVISIBLE_AIRPLANE table
     airplanes = query("SELECT DISTINCT apRegis FROM \"AIRPLANE\" WHERE 1;").fetchall()
     for airplane in airplanes:
+        wait_unlock_db(query, DATABASE_PATH, FILENAME)
         airplane_name = airplane[0]
         same_airplane = query(f"SELECT DISTINCT apInvisible FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}';")
         if same_airplane != False:

@@ -215,6 +215,7 @@ while True:
         if airplane[1] == SOURCE: 
             airplane_name = airplane[0]
             if airplane_name not in airplane_data.keys():
+                wait_unlock_db(query, DATABASE_PATH, FILENAME)
                 query(f"""
                         UPDATE "AIRPLANE"
                         SET apInvisible = '1',
