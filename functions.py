@@ -70,7 +70,7 @@ class bcolors:
     get_ppr = "\033[1;95m"                      # purple
     get_aftn_by_id = "\033[1;93m"               # yellow
     get_airport_by_zone = "\033[1;36m"          # cyan
-    error = " \u001b[31m"                       # red
+    error = "\u001b[31m"                       # red
     default = "\033[1;37m"
 
 
