@@ -65,7 +65,7 @@ Returns
 list
     Airplanes of the file
 """
-    conn = create_connection(file)
+    conn = create_connection(file, False)
     query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
     wait_unlock_db(query, file, FILENAME)
     
