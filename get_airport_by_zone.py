@@ -10,6 +10,7 @@ import requests
 import json
 import time
 import os
+from check_airplanes import DATABASE_PATH
 from functions import *
 from json import JSONDecodeError
 from airplane_zone import create_zone
@@ -67,22 +68,7 @@ list
 """
     conn = create_connection(file)
     query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
-    airplanes = query("SELECT * FROM \"INVISIBLE_AIRPLANE\" WHERE 1;")
-
-    db_status = query(f"""
-                        INSERT INTO "AIRPLANE" 
-                        VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
-                    """)
-    query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
-    while db_status == "locked":
-        print_c(f"waiting for the {file} database to be unlocked")
-        
-        time.sleep(5)
-        db_status = query(f"""
-                            INSERT INTO "AIRPLANE" 
-                            VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "");
-                        """)
-        query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\";")
+    wait_unlock_db(query, DATABASE_PATH, FILENAME)
 
     airplanes = airplanes.fetchall() if not isinstance(airplanes, type(None)) and airplanes else []
 
