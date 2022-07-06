@@ -171,6 +171,7 @@ while True:
     print_c(f"Number of new airplanes: {len(airplane_data.keys())}")
     for airplane_name in airplane_data.keys():
         unique_airplane = query(f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
+        unique_airplane = True if len(unique_airplane.fetchall()) == 0 else False
         tmp_airplane = airplane_data[airplane_name]
 
         # if the airplane isn't in the database, we add it
