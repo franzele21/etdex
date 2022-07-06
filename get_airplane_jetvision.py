@@ -167,13 +167,14 @@ while True:
     wait_unlock_db(query, DATABASE_PATH, FILENAME, SOURCE)
 
     initialize_database(conn)
-    print(len(airplane_data.keys()))
+
+    print_c(f"Number of new airplanes: {len(airplane_data.keys())}")
     for airplane_name in airplane_data.keys():
         unique_airplane = query(f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
         tmp_airplane = airplane_data[airplane_name]
 
         # if the airplane isn't in the database, we add it
-        if not unique_airplane:
+        if unique_airplane:
             query(f"""
                     INSERT INTO "AIRPLANE" VALUES
                     ('{airplane_name}', '{tmp_airplane["latitude"]}', 
