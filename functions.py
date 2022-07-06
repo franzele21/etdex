@@ -3,6 +3,7 @@ Here you can find functions that are used in many other program
 """
 
 import sqlite3
+import time
 from sqlite3 import Error
 from datetime import datetime
 
@@ -108,3 +109,35 @@ None
         message = f"{bcolors.error}{message}"
 
     print(f"{output_time} | {output_file} {message}")
+
+
+def wait_unlock_db(query: function, DATABASE_PATH: str, FILENAME: str, SOURCE: str="") -> None:
+    """
+Will stop the program, if the database is locked
+
+Parameters
+----------
+query : function
+    The function to make querie on a database
+DATABASE_PATH : str
+    The path/name of the database
+FILENAME : str
+    The file that execute this function
+SOURCE : str
+    For the "get_aiplane" programms, the name of the source
+    """
+    db_status = query(f"""
+                    INSERT INTO "AIRPLANE" 
+                    VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
+                """)
+
+    query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
+    while db_status == "locked":
+        print_context(f"waiting for the {DATABASE_PATH} database to be unlocked")
+        
+        time.sleep(5)
+        db_status = query(f"""
+                            INSERT INTO "AIRPLANE" 
+                            VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
+                        """)
+        query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
