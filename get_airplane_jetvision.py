@@ -163,6 +163,7 @@ while True:
     conn = create_connection(DATABASE_PATH)
     query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
 
+    print("oui")
     db_status = query("""
                         INSERT INTO "AIRPLANE" 
                         VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
@@ -178,7 +179,7 @@ while True:
                             VALUES ("{FILENAME}_", "", "", "", "", "", "", "", "", "{SOURCE}");
                         """)
         query(f"DELETE FROM \"AIRPLANE\" WHERE apRegis = \"{FILENAME}_\" AND apSource = \"{SOURCE}\";")
-    
+    print("non")
     initialize_database(conn)
 
     for airplane_name in airplane_data.keys():
