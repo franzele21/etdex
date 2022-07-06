@@ -111,7 +111,7 @@ None
     print(f"{output_time} | {output_file} {message}")
 
 
-def wait_unlock_db(query: function, DATABASE_PATH: str, FILENAME: str, SOURCE: str="") -> None:
+def wait_unlock_db(query, DATABASE_PATH: str, FILENAME: str, SOURCE: str="") -> None:
     """
 Will stop the program, if the database is locked
 
