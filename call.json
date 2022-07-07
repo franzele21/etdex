@@ -1,0 +1,15 @@
+{
+    "0": {
+        "name": "get_airplane_jetvision.py",
+        "cycle_time": 30
+    },
+    "1": {
+        "name": "check_airplanes.py",
+        "cycle_time": 100
+    },
+    "2": {
+        "name": "get_airport_by_zone.py",
+        "cycle_time": 300
+    }
+    
+}
