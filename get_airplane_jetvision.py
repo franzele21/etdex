@@ -18,12 +18,10 @@ DATABASE_PATH = "airplane.db"
 SOURCE = "JetVision"
 AUTH_FILE = "auth_api.json"
 FILENAME = os.path.basename(__file__)
-CYCLE_TIME = 30
 
 print_c = lambda text : print_context(FILENAME, text)
 
 
-print_c("initialization")
 
 def to_dict_by_callsign(airplane_list: list, callsign: str, 
                         latitude: int, longitude: int, 
@@ -137,96 +135,94 @@ query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
 initialize_database(conn)
 conn.close()
 
-while True:
-    print_c("begin of the routine")
 
-    headers = {
-        'Accept': 'application/json; charset=UTF-8',
-    }
-    
-    auth = (user, api_key)
+print_c("begin of the routine")
 
-    response = requests.get('https://mlat.jetvision.de/mlat/aircraftlist.json', headers=headers, auth=auth)
+headers = {
+    'Accept': 'application/json; charset=UTF-8',
+}
 
-    if response.status_code != 200:
-        print_context("ERROR: there was a problem during the request (statuscode: {response.status_code})")
-        print_c("anormal end of the routine")
-        time.sleep(CYCLE_TIME)
-        continue
+auth = (user, api_key)
 
-    content = json.loads(response.text)
-    
-    # create a dict from the api data, indexed by they're licence number 
-    airplane_data = to_dict_by_callsign(content, "reg", "lat", "lon", "trk", "alt", "spd", "uti")
+response = requests.get('https://mlat.jetvision.de/mlat/aircraftlist.json', headers=headers, auth=auth)
 
-    # creates the database if it doesn't exist
-    conn = create_connection(DATABASE_PATH)
-    query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
+if response.status_code != 200:
+    print_context("ERROR: there was a problem during the request (statuscode: {response.status_code})")
+    print_c("anormal end of the routine")
+    exit()
 
-    initialize_database(conn)
+content = json.loads(response.text)
 
-    new_airplane_c, updated_airplane_c, invisible_airplane_c = 0, 0, 0
-    for airplane_name in airplane_data.keys():
+# create a dict from the api data, indexed by they're licence number 
+airplane_data = to_dict_by_callsign(content, "reg", "lat", "lon", "trk", "alt", "spd", "uti")
 
-        wait_unlock_db(query, DATABASE_PATH, FILENAME, SOURCE)
+# creates the database if it doesn't exist
+conn = create_connection(DATABASE_PATH)
+query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
 
-        unique_airplane = query(f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
-        unique_airplane = True if len(unique_airplane.fetchall()) == 0 else False
-        tmp_airplane = airplane_data[airplane_name]
+initialize_database(conn)
 
-        # if the airplane isn't in the database, we add it
-        if unique_airplane:
-            query(f"""
-                    INSERT INTO "AIRPLANE" VALUES
-                    ('{airplane_name}', '{tmp_airplane["latitude"]}', 
-                    '{tmp_airplane["longitude"]}', '{tmp_airplane["altitude"]}', 
-                    '{int(tmp_airplane["time"])}', '{tmp_airplane["velocity"]}',
-                    '{tmp_airplane["heading"]}', '0', '0', '{SOURCE}');
-                    
-                """)
-            new_airplane_c += 1
-        else:
-            # if it does exists, we update it 
-            # here we can see can we put apInvisible and apInivisibleTime 
-            # to 0, because if the airplane wasn't on radar for a small
-            # time, it will be registered as disappeared, but if it is 
-            # in the list, it is reachable by ADS-B, so it isn't
-            # invisible
+new_airplane_c, updated_airplane_c, invisible_airplane_c = 0, 0, 0
+for airplane_name in airplane_data.keys():
+
+    wait_unlock_db(query, DATABASE_PATH, FILENAME, SOURCE)
+
+    unique_airplane = query(f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
+    unique_airplane = True if len(unique_airplane.fetchall()) == 0 else False
+    tmp_airplane = airplane_data[airplane_name]
+
+    # if the airplane isn't in the database, we add it
+    if unique_airplane:
+        query(f"""
+                INSERT INTO "AIRPLANE" VALUES
+                ('{airplane_name}', '{tmp_airplane["latitude"]}', 
+                '{tmp_airplane["longitude"]}', '{tmp_airplane["altitude"]}', 
+                '{int(tmp_airplane["time"])}', '{tmp_airplane["velocity"]}',
+                '{tmp_airplane["heading"]}', '0', '0', '{SOURCE}');
+                
+            """)
+        new_airplane_c += 1
+    else:
+        # if it does exists, we update it 
+        # here we can see can we put apInvisible and apInivisibleTime 
+        # to 0, because if the airplane wasn't on radar for a small
+        # time, it will be registered as disappeared, but if it is 
+        # in the list, it is reachable by ADS-B, so it isn't
+        # invisible
+        query(f"""
+                UPDATE "AIRPLANE"
+                SET apLatitude = '{tmp_airplane["latitude"]}',
+                apLongitude = '{tmp_airplane["longitude"]}',
+                apAltitude = '{tmp_airplane["altitude"]}',
+                apTime = '{tmp_airplane["time"]}',
+                apHeading = '{tmp_airplane["heading"]}',
+                apVelocity = '{tmp_airplane["velocity"]}',
+                apInvisible = '0',
+                apInvisibleTime = '0'
+                WHERE apRegis = '{airplane_name}'
+                AND apSource = '{SOURCE}';
+            """)
+        updated_airplane_c += 1
+        
+
+# if the airplane isn't to be seen by the ADS-B system,
+# it will be registered as invisible
+airplanes = query("SELECT apRegis, apSource FROM \"AIRPLANE\" WHERE apInvisible = '0';")
+for airplane in airplanes:
+    if airplane[1] == SOURCE: 
+        airplane_name = airplane[0]
+        if airplane_name not in airplane_data.keys():
+            wait_unlock_db(query, DATABASE_PATH, FILENAME)
             query(f"""
                     UPDATE "AIRPLANE"
-                    SET apLatitude = '{tmp_airplane["latitude"]}',
-                    apLongitude = '{tmp_airplane["longitude"]}',
-                    apAltitude = '{tmp_airplane["altitude"]}',
-                    apTime = '{tmp_airplane["time"]}',
-                    apHeading = '{tmp_airplane["heading"]}',
-                    apVelocity = '{tmp_airplane["velocity"]}',
-                    apInvisible = '0',
-                    apInvisibleTime = '0'
+                    SET apInvisible = '1',
+                    apInvisibleTime = '{int(time.time())}'
                     WHERE apRegis = '{airplane_name}'
                     AND apSource = '{SOURCE}';
                 """)
-            updated_airplane_c += 1
-            
+            invisible_airplane_c += 1
+conn.close()
 
-    # if the airplane isn't to be seen by the ADS-B system,
-    # it will be registered as invisible
-    airplanes = query("SELECT apRegis, apSource FROM \"AIRPLANE\" WHERE apInvisible = '0';")
-    for airplane in airplanes:
-        if airplane[1] == SOURCE: 
-            airplane_name = airplane[0]
-            if airplane_name not in airplane_data.keys():
-                wait_unlock_db(query, DATABASE_PATH, FILENAME)
-                query(f"""
-                        UPDATE "AIRPLANE"
-                        SET apInvisible = '1',
-                        apInvisibleTime = '{int(time.time())}'
-                        WHERE apRegis = '{airplane_name}'
-                        AND apSource = '{SOURCE}';
-                    """)
-                invisible_airplane_c += 1
-    conn.close()
-
-    print_c(f"new airplanes: {new_airplane_c}, updated airplanes: {updated_airplane_c}, new invisible airplanes: {invisible_airplane_c}")
-    print_c("end of the routine")
-    # it will pause 30 seconds, so we won't have any problem with the APIs
-    time.sleep(CYCLE_TIME)
+print_c(f"new airplanes: {new_airplane_c}, updated airplanes: {updated_airplane_c}, new invisible airplanes: {invisible_airplane_c}")
+print_c("end of the routine")
+# it will pause 30 seconds, so we won't have any problem with the APIs

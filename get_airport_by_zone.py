@@ -22,11 +22,10 @@ AIRPLANE_DATABASE = "airplane.db"
 OUTPUT_FILE = "airport_by_zone.json"
 AUTH_AVDB_FILE = "auth_avdb.json"
 FILENAME = os.path.basename(__file__)
-CYCLE_TIME = 300
 
 print_c = lambda text : print_context(FILENAME, text)
 
-print_c("initialization")
+#print_c("initialization")
 
 def filter_airports(airports: list) -> list:
     """
@@ -130,64 +129,63 @@ response = requests.get("https://avdb.aerops.com/public/airports", auth=(avdb_us
 airports = json.loads(response.text)["data"]
 airports = filter_airports(airports)
 
-while True:
-    print_c("begin of the routine")
 
-    # get the airplanes that are inivisble by the ADS-B system
-    airplanes = format_airplanes(get_airplanes(AIRPLANE_DATABASE))
-    print_c(f"number of new invisible airplane: {len(airplanes)}")
+print_c("begin of the routine")
 
-    airport_in_zone = {}
-    for airplane in airplanes:
-        # we verify that the data can be interpreted, if not, it will be skipped
-        try:
-            airplane["latitude"] = float(airplane["latitude"])
-            airplane["longitude"] = float(airplane["longitude"])
-            airplane["altitude"] = float(airplane["altitude"])
-            airplane["velocity"] = float(airplane["velocity"])
-            airplane["heading"] = float(airplane["heading"])
-        except:
-            continue
+# get the airplanes that are inivisble by the ADS-B system
+airplanes = format_airplanes(get_airplanes(AIRPLANE_DATABASE))
+print_c(f"number of new invisible airplane: {len(airplanes)}")
 
-        # create the zone on which the airplane can land
-        airplane_zone = create_zone((airplane["latitude"], 
-                                    airplane["longitude"]),
-                                    airplane["altitude"],
-                                    airplane["velocity"],
-                                    airplane["heading"])
-        for airport in airports:
-            airport_coords = (float(airport["latitude"]), float(airport["longitude"]))
-            if is_inside_polygon(airplane_zone, airport_coords):
-                # add the airplane as key if it is not already
-                if airplane["callname"] not in airport_in_zone.keys():
-                    airport_in_zone[airplane["callname"]] = {"coords": {
-                                                                "latitude": airplane["latitude"],
-                                                                "longitude": airplane["longitude"]
-                                                                },
-                                                            "last_contact": airplane["last_contact"],
-                                                            "airport": []
-                                                            }
-                # add the airport, if it is possible to the airplane to 
-                # land there
-                airport_in_zone[airplane["callname"]]["airport"].append({"regis" : airport["name"],
-                                                                        "coords" : {
-                                                                            "latitude": airport_coords[0],
-                                                                            "longitude": airport_coords[1]
-                                                                            }
-                                                                        })
-    if not previous_been_read(OUTPUT_FILE):
-        with open(OUTPUT_FILE) as file:
-            previous_airport_by_zone = json.loads(file.read())["data"]
-            airport_in_zone = previous_airport_by_zone | airport_in_zone
-    
-    output_data = {
-        "been_read": False, 
-        "data": airport_in_zone
-    }
+airport_in_zone = {}
+for airplane in airplanes:
+    # we verify that the data can be interpreted, if not, it will be skipped
+    try:
+        airplane["latitude"] = float(airplane["latitude"])
+        airplane["longitude"] = float(airplane["longitude"])
+        airplane["altitude"] = float(airplane["altitude"])
+        airplane["velocity"] = float(airplane["velocity"])
+        airplane["heading"] = float(airplane["heading"])
+    except:
+        continue
 
-    # write the possibilities in a JSON file
-    with open(OUTPUT_FILE, "w+") as file:
-        file.write(json.dumps(output_data, indent=2))
+    # create the zone on which the airplane can land
+    airplane_zone = create_zone((airplane["latitude"], 
+                                airplane["longitude"]),
+                                airplane["altitude"],
+                                airplane["velocity"],
+                                airplane["heading"])
+    for airport in airports:
+        airport_coords = (float(airport["latitude"]), float(airport["longitude"]))
+        if is_inside_polygon(airplane_zone, airport_coords):
+            # add the airplane as key if it is not already
+            if airplane["callname"] not in airport_in_zone.keys():
+                airport_in_zone[airplane["callname"]] = {"coords": {
+                                                            "latitude": airplane["latitude"],
+                                                            "longitude": airplane["longitude"]
+                                                            },
+                                                        "last_contact": airplane["last_contact"],
+                                                        "airport": []
+                                                        }
+            # add the airport, if it is possible to the airplane to 
+            # land there
+            airport_in_zone[airplane["callname"]]["airport"].append({"regis" : airport["name"],
+                                                                    "coords" : {
+                                                                        "latitude": airport_coords[0],
+                                                                        "longitude": airport_coords[1]
+                                                                        }
+                                                                    })
+if not previous_been_read(OUTPUT_FILE):
+    with open(OUTPUT_FILE) as file:
+        previous_airport_by_zone = json.loads(file.read())["data"]
+        airport_in_zone = previous_airport_by_zone | airport_in_zone
 
-    print_c("end of the routine")
-    time.sleep(CYCLE_TIME)
+output_data = {
+    "been_read": False, 
+    "data": airport_in_zone
+}
+
+# write the possibilities in a JSON file
+with open(OUTPUT_FILE, "w+") as file:
+    file.write(json.dumps(output_data, indent=2))
+
+print_c("end of the routine")
