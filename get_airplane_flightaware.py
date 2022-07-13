@@ -72,6 +72,7 @@ dict
         if isinstance(geo_altitude_value, type(None)):
             continue
         geo_altitude_value *= 0.3048    # to convert from feet to meters
+        geo_altitude_value *= 100       # from hundreds of meter to meter
 
         velocity_value = i[velocity] if not isinstance(i[velocity], str) else eval(i[velocity])
         if isinstance(velocity_value, type(None)):
@@ -115,11 +116,12 @@ headers = {
 }
 
 params = {
+    'query': f"{{> clock {int(time.time()) - 60*60}}}",
     'unique_flights': 'true',
-    'max_pages': '50',
+    'max_pages': '50'
 }
 
-response = requests.get('https://aeroapi.flightaware.com/aeroapi/flights/search/positions', params=params, headers=headers)
+response = requests.get('https://aeroapi.flightaware.com/aeroapi/flights/search/positions', headers=headers)
 
 if response.status_code != 200:
     print_context(FILENAME, f"ERROR: there was a problem during the request (statuscode: {response.status_code})")
