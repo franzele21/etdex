@@ -283,6 +283,7 @@ while True:
                     "tdAirplane" TEXT,
                     "tdTime" INTEGER,
                     "tdProb" REAL,
+                    "tdSent" INTEGER,
                     CONSTRAINT unique_combinaison UNIQUE (tdAirport, tdAirplane),
                     PRIMARY KEY("tdId" AUTOINCREMENT)
                 );
@@ -345,7 +346,7 @@ while True:
                             INSERT INTO "TREATED_DATA"
                             (tdAirport, tdAirplane, tdTime, tdProb)
                             VALUES ('{evidence["airport"]}', '{evidence["regis"]}', 
-                            '{evidence["time"]}', '{evidence["prob"]}');
+                            '{evidence["time"]}', '{evidence["prob"]}', '0');
                         """)
                     query(f"""
                             DELETE FROM "UNTREATED_DATA"
@@ -421,7 +422,7 @@ while True:
                         INSERT INTO "TREATED_DATA"
                         (tdAirport, tdAirplane, tdTime, tdProb)
                         VALUES ('{departing_airport}', '{airplane}', 
-                        '{departure_time}', '{ponderation["PPR"]["default"]/100.0}');
+                        '{departure_time}', '{ponderation["PPR"]["default"]/100.0}', '0');
                     """)
 
 
@@ -456,7 +457,7 @@ while True:
                         INSERT INTO "TREATED_DATA"
                         (tdAirport, tdAirplane, tdTime, tdProb)
                         VALUES ('{aftn["airport"]}', '{aftn["airplane"]}',
-                        '{aftn["time"]}', '{ponderation["AFTN"]["default"]/100.0}');
+                        '{aftn["time"]}', '{ponderation["AFTN"]["default"]/100.0}', '0');
                     """)
 
     # here, when an airplane appears two times, but not at the same airport
