@@ -344,7 +344,7 @@ while True:
                 if landing_exists == 0:
                     query(f"""
                             INSERT INTO "TREATED_DATA"
-                            (tdAirport, tdAirplane, tdTime, tdProb)
+                            (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
                             VALUES ('{evidence["airport"]}', '{evidence["regis"]}', 
                             '{evidence["time"]}', '{evidence["prob"]}', '0');
                         """)
