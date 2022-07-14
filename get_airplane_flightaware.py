@@ -12,6 +12,10 @@ import os
 import requests
 from functions import *
 
+# forces this program to be in the UTC timezone
+os.environ["TZ"] = "UTC"
+time.tzset()
+
 # path to the database
 DATABASE_PATH = "airplane.db"
 # api, from where the airplanes comes
@@ -20,6 +24,7 @@ AUTH_FILE = "auth_api.json"
 FILENAME = os.path.basename(__file__)
 #CYCLE_TIME = 30
 
+print_c = lambda text : print_context(FILENAME, text)
 
 def to_dict_by_callsign(airplane_list: list, callsign: str, 
                         latitude: int, longitude: int, 
@@ -102,13 +107,43 @@ dict
 
     return new_dict
 
+def initialize_database(conn: sqlite3.Connection) -> None:
+    """
+Creates the table AIRPLANE, if it doesn't exist
+    """
+    table_exists = query("SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
+    if table_exists[0][0] == 0:
+        # we have the basic parameters of a airplane (registration 
+        # name, coordinate, altitude, speed and heading) qnd three more
+        # aspects : when it was last seen, if it is invisible, and since
+        # when it's invisible
+        query("""
+                CREATE TABLE "AIRPLANE" ( 
+                    "apRegis" TEXT NOT NULL, 
+                    "apLatitude" REAL, 
+                    "apLongitude" REAL, 
+                    "apAltitude" REAL, 
+                    "apTime" INTEGER,
+                    "apVelocity" REAL,
+                    "apHeading" REAL,
+                    "apInvisible" INTEGER,
+                    "apInvisibleTime" INTEGER,
+                    "apSource" TEXT,
+                    CONSTRAINT unique_direction UNIQUE (apRegis, apSource),
+                    PRIMARY KEY ("apRegis", "apSource") );
+            """)
+
 with open(AUTH_FILE) as file:
     content = json.loads(file.read())[SOURCE]
     user = content["user"]
     api_key = content["key"]
 
+conn = create_connection(DATABASE_PATH)
+query = lambda query_ : query_to_bdd(conn, FILENAME, query_)
+initialize_database(conn)
+conn.close()
 
-print_context(FILENAME, "begin of the routine")
+print_c("begin of the routine")
 
 headers = {
     'Accept': 'application/json; charset=UTF-8',
@@ -116,16 +151,16 @@ headers = {
 }
 
 params = {
-    'query': f"{{> clock {int(time.time()) - 60*60}}}",
-    'unique_flights': 'true',
-    'max_pages': '50'
+    'query': f"{{> clock {int(time.time()) - 3600}}}",
+    'unique_flights': True,
+    'max_pages': 50
 }
 
 response = requests.get('https://aeroapi.flightaware.com/aeroapi/flights/search/positions', headers=headers)
 
 if response.status_code != 200:
-    print_context(FILENAME, f"ERROR: there was a problem during the request (statuscode: {response.status_code})")
-    print_context(FILENAME, "anormal end of the routine")
+    print_c(f"ERROR: there was a problem during the request (statuscode: {response.status_code})")
+    print_c("anormal end of the routine")
     exit()
 
 content = json.loads(response.text)
@@ -136,43 +171,28 @@ airplane_data = to_dict_by_callsign(content["positions"], "fa_flight_id", "latit
 # creates the database if it doesn't exist
 conn = create_connection(DATABASE_PATH)
 query = lambda text: query_to_bdd(conn, FILENAME, text)
-table_exists = query("SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
 
-if table_exists[0][0] == 0:
-    # we have the basic parameters of a airplane (registration 
-    # name, coordinate, altitude, speed and heading) qnd three more
-    # aspects : when it was last seen, if it is invisible, and since
-    # when it's invisible
-    query("""
-                    CREATE TABLE "AIRPLANE" ( 
-                        "apRegis" TEXT NOT NULL, 
-                        "apLatitude" REAL, 
-                        "apLongitude" REAL, 
-                        "apAltitude" REAL, 
-                        "apTime" INTEGER,
-                        "apVelocity" REAL,
-                        "apHeading" REAL,
-                        "apInvisible" INTEGER,
-                        "apInvisibleTime" INTEGER,
-                        "apSource" TEXT,
-                        CONSTRAINT unique_direction UNIQUE (apRegis, apSource),
-                        PRIMARY KEY ("apRegis", "apSource") );
-                """)
+initialize_database(conn)
 
+new_airplane_c, updated_airplane_c, invisible_airplane_c = 0, 0, 0
 for airplane_name in airplane_data.keys():
-    unique_airplane = query(f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';").fetchone()
+
+    wait_unlock_db(query, DATABASE_PATH, FILENAME, SOURCE)
+
+    unique_airplane = query(f"SELECT * FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}' AND apSource = '{SOURCE}';")
+    unique_airplane = True if len(unique_airplane.fetchall()) == 0 else False
     tmp_airplane = airplane_data[airplane_name]
 
     # if the airplane isn't in the database, we add it
-    if unique_airplane == None:
+    if unique_airplane:
         query(f"""
-                        INSERT INTO "AIRPLANE" VALUES
-                        ('{airplane_name}', '{tmp_airplane["latitude"]}', 
-                        '{tmp_airplane["longitude"]}', '{tmp_airplane["altitude"]}', 
-                        '{int(tmp_airplane["time"])}', '{tmp_airplane["velocity"]}',
-                        '{tmp_airplane["heading"]}', '0', '0', '{SOURCE}');
-                        
-                    """)
+                INSERT INTO "AIRPLANE" VALUES
+                ('{airplane_name}', '{tmp_airplane["latitude"]}', 
+                '{tmp_airplane["longitude"]}', '{tmp_airplane["altitude"]}', 
+                '{int(tmp_airplane["time"])}', '{tmp_airplane["velocity"]}',
+                '{tmp_airplane["heading"]}', '0', '0', '{SOURCE}');    
+            """)
+        new_airplane_c += 1
     else:
         # if it does exists, we update it 
         # here we can see can we put apInvisible and apInivisibleTime 
@@ -193,6 +213,7 @@ for airplane_name in airplane_data.keys():
                         WHERE apRegis = '{airplane_name}'
                         AND apSource = '{SOURCE}';
                     """)
+        updated_airplane_c += 1
 
 # if the airplane isn't to be seen by the ADS-B system,
 # it will be registered as invisible
@@ -208,7 +229,9 @@ for airplane in airplanes:
                             WHERE apRegis = '{airplane_name}'
                             AND apSource = '{SOURCE}';
                         """)
+            invisible_airplane_c += 1
 conn.close()
 
-print_context(FILENAME, "end of the routine")
+print_c(f"new airplanes: {new_airplane_c}, updated airplanes: {updated_airplane_c}, new invisible airplanes: {invisible_airplane_c}")
+print_c("end of the routine")
 # it will pause 30 seconds, so we won't have any problem with the APIs
