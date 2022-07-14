@@ -153,10 +153,10 @@ headers = {
 params = {
     'query': f"{{> clock {int(time.time()) - 3600}}}",
     'unique_flights': True,
-    'max_pages': 50
+    'max_pages': 5
 }
 
-response = requests.get('https://aeroapi.flightaware.com/aeroapi/flights/search/positions', headers=headers)
+response = requests.get('https://aeroapi.flightaware.com/aeroapi/flights/search/positions', params=params, headers=headers)
 
 if response.status_code != 200:
     print_c(f"ERROR: there was a problem during the request (statuscode: {response.status_code})")
