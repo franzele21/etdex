@@ -420,7 +420,7 @@ while True:
             if len(landings) == 0:
                 query(f"""
                         INSERT INTO "TREATED_DATA"
-                        (tdAirport, tdAirplane, tdTime, tdProb)
+                        (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
                         VALUES ('{departing_airport}', '{airplane}', 
                         '{departure_time}', '{ponderation["PPR"]["default"]/100.0}', '0');
                     """)
@@ -455,7 +455,7 @@ while True:
             else:
                 query(f"""
                         INSERT INTO "TREATED_DATA"
-                        (tdAirport, tdAirplane, tdTime, tdProb)
+                        (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
                         VALUES ('{aftn["airport"]}', '{aftn["airplane"]}',
                         '{aftn["time"]}', '{ponderation["AFTN"]["default"]/100.0}', '0');
                     """)
