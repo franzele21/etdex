@@ -23,7 +23,10 @@ POSSIBLE_LANDINGS_ADSB_FILE = "airport_by_zone.json"
 PPR_FILE = "output_ppr.json"
 AFTN_FILE = "data_traffic.json"
 FILENAME = os.path.basename(__file__)
-CYCLE_TIME = 900                        # in seconds
+####################################################################################################################################################################
+CYCLE_TIME = 120                        # in seconds
+####################################################################################################################################################################
+
 
 print_c = lambda text : print_context(FILENAME, text)
 
@@ -289,6 +292,8 @@ while True:
                 );
                 """)
 
+    print("1. add untreated airplane")
+
     # add all airplanes coming from airTracker
     if not tracking_been_read: 
         with open(POSSIBLE_LANDINGS_ADSB_FILE, "w+") as file:
@@ -319,6 +324,7 @@ while True:
                             '{tracked_airplane_time}');
                         """)
 
+    print("2. add treated airplane")
     # here is the data from UNTREATED_DATA going to be treated, this means
     # that it will find all evidences that could refer to the same landing,
     # (first part of evidence_probability) and then it will calculate the
@@ -354,6 +360,7 @@ while True:
                             AND udRegis = '{evidence["regis"]}'
                         """)
 
+    print("3. add ppr")
     # here are all the PPRs going to be checked, and if one has the same 
     # destination airport and same airplane. If one same landing has be 
     # found, the landing will have a 100% of probability 
@@ -425,7 +432,7 @@ while True:
                         '{departure_time}', '{ponderation["PPR"]["default"]/100.0}', '0');
                     """)
 
-
+    print("4. add aftn")
     if not aftn_data["been_read"]:
         with open(AFTN_FILE, "w") as file:
             aftn_data["been_read"] = True
@@ -460,6 +467,7 @@ while True:
                         '{aftn["time"]}', '{ponderation["AFTN"]["default"]/100.0}', '0');
                     """)
 
+    print("1. most probable")
     # here, when an airplane appears two times, but not at the same airport
     # we will keep the most probable one. If there isn't a most probable
     # one we will keep them all
