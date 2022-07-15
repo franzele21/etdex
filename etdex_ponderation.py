@@ -336,11 +336,12 @@ while True:
     for airport_name in list_airports_name:
         if airport_name not in done_airport:
             done_airport.append(airport_name)
-            
+            print("select1")
             evidences_by_airport = query(f"SELECT * FROM \"UNTREATED_DATA\" WHERE udAirport='{airport_name}';")
             evidences_by_airport = evidences_by_airport.fetchall()
 
             for evidence in evidence_probability(evidences_by_airport):
+                print("select2")
                 landing_exists =  query(f"""
                                             SELECT count(tdId)
                                             FROM "TREATED_DATA"
@@ -348,12 +349,14 @@ while True:
                                             AND tdAirplane = '{evidence["regis"]}';
                                         """).fetchone()[0]
                 if landing_exists == 0:
+                    print("insert")
                     query(f"""
                             INSERT INTO "TREATED_DATA"
                             (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
                             VALUES ('{evidence["airport"]}', '{evidence["regis"]}', 
                             '{evidence["time"]}', '{evidence["prob"]}', '0');
                         """)
+                    print("delete")
                     query(f"""
                             DELETE FROM "UNTREATED_DATA"
                             WHERE udAirport = '{evidence["airport"]}'
