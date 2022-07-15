@@ -290,6 +290,7 @@ while True:
                 """)
 
     # add all airplanes coming from airTracker
+    print_c("Adding new airplanes...")
     if not tracking_been_read: 
         with open(POSSIBLE_LANDINGS_ADSB_FILE, "w+") as file:
             file.write(json.dumps({"been_read": True, "data": tracking}))
@@ -324,6 +325,7 @@ while True:
     # (first part of evidence_probability) and then it will calculate the
     # probability of this landing, by weightening them, depending from 
     # they're sources (second part of evidence_probability)
+    print_c("Treat the data...")
     list_airports_name = query("SELECT udAirport FROM \"UNTREATED_DATA\" WHERE 1").fetchall()
     list_airports_name = push_id(list_airports_name)
     done_airport = []
@@ -356,7 +358,8 @@ while True:
 
     # here are all the PPRs going to be checked, and if one has the same 
     # destination airport and same airplane. If one same landing has be 
-    # found, the landing will have a 100% of probability 
+    # found, the landing will have a 100% of probability
+    print_c("Adding and treating the PPR...")
     if not ppr_been_read:
         with open(PPR_FILE, "w+") as file:
             file.write(json.dumps({"been_read": True, "new_ppr": all_ppr}))
@@ -425,7 +428,7 @@ while True:
                         '{departure_time}', '{ponderation["PPR"]["default"]/100.0}', '0');
                     """)
 
-
+    print_c("Adding and treating the new AFTN messages...")
     if not aftn_data["been_read"]:
         with open(AFTN_FILE, "w") as file:
             aftn_data["been_read"] = True
@@ -500,6 +503,9 @@ while True:
                         AND ABS(tdTime - '{landing_time}') <= '{delta_landing}';
                     """)
     conn.close()
+
+    print_c("Sending data to the AVDB API...")
+    os.system("python3 send_db.py")
 
     print_c("end of the routine")
     time.sleep(CYCLE_TIME)
