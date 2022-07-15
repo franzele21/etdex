@@ -55,9 +55,9 @@ sqlite3.Cursor or None
         cursor.execute(query_)
         connection.commit()
         return cursor
-    except sqlite3.OperationalError:
-        print_context(file, "Error: the database is locked", True)
-        return "locked"
+    # except sqlite3.OperationalError:
+    #     print_context(file, "Error: the database is locked", True)
+    #     return "locked"
     except Error as e:
         print_context(file, f"Error: '{e}'", True)
         return False
