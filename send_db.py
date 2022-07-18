@@ -1,3 +1,9 @@
+"""
+This program sends all landing that are in the database (table 
+TREATED_DATA) that weren't send (tdSent = 0) and that with the login 
+in airport_to_send.json (tdAirport in airport_to_send)
+"""
+
 import os
 import json
 import requests
