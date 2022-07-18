@@ -28,10 +28,16 @@ with open(AIRPORT_SEND_FILE) as file:
 # next we parse every airport name, and see if there is data for that
 counter = 0
 for airport, password in airport_to_send.items():
-    print_c(f"Sending movement from {airport}...")
     new_movement = query(f"SELECT * FROM \"TREATED_DATA\" WHERE tdSent = '0' AND tdAirport = '{airport}';")
+
     if new_movement:
+
+        first_movement = True
         for movement in new_movement:
+            if first_movement:
+                print_c(f"Sending movement from {airport}...")
+                first_movement = False
+
             format_json = {
                     "createdAt":None,                          # to add
                     "createdBy":"etdex",
