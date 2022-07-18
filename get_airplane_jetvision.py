@@ -179,7 +179,6 @@ for airplane_name in airplane_data.keys():
                 '{tmp_airplane["longitude"]}', '{tmp_airplane["altitude"]}', 
                 '{int(tmp_airplane["time"])}', '{tmp_airplane["velocity"]}',
                 '{tmp_airplane["heading"]}', '0', '0', '{SOURCE}');
-                
             """)
         new_airplane_c += 1
     else:
