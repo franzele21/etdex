@@ -20,84 +20,10 @@ print_c = lambda text : print_context(FILENAME, text)
 conn = create_connection(DATABASE_PATH)
 query = lambda x: query_to_bdd(conn, FILENAME, x)
 
-# we retrieve all treated movement, that weren't sent
-all_airplanes = query("SELECT * FROM \"TREATED_DATA\" WHERE tdSent = '0';")
-
-# we close the program if there was a problem, else, we fetchall data
-if all_airplanes: 
-    all_airplanes = all_airplanes.fetchall()
-else:
-    conn.close()
-    exit()
-
 # we look up which for which airport we need to send the data
 with open(AIRPORT_SEND_FILE) as file:
     airport_to_send = json.loads(file.read())
 
-format_json = {
-   "createdAt":"",                          # to add
-   "createdBy":"etdex",
-   "airport":"",                            # to add
-   "airtrackCustomerId":None,
-   "flighttype":"",
-   "navigation":"",
-   "trafficstatus":"",
-   "joiningpoints":"",
-   "canceled":None,
-   "pax":None,
-   "crew":None,
-   "parkingMinutes":None,
-   "parkingHours":None,
-   "parkingMonths":None,
-   "parkingDays":None,
-   "children":None,
-   "flighttypeCat":"",
-   "aircraftName":"",                       # to add
-   "runway":"",
-   "flightFrom":"",
-   "flightTo":"",
-   "flightId":"",
-   "aircraftType":"",
-   "flightTimeEstimated":None,
-   "dof":"",
-   "flightlevel":"",                        # add ?
-   "speed":"",                              # add ?
-   "flightway":"",
-   "flightheight":"",
-   "weightCat":"",
-   "properties":"",
-   "vfrPoint":"",
-   "locked":"",
-   "flightplan":None,
-   "flightplanText":"",
-   "tagged":"",
-   "computerName":"",
-   "departure":"",
-   "lastinfo":"",
-   "pilot":"",
-   "squawk":"",
-   "infoText":"",
-   "atis":"",
-   "smap":"",
-   "qnh":"",
-   "slot":"",
-   "readback":"",
-   "executor":"",
-   "freight":"",
-   "generalRemarks":"",
-   "uniqueId":"",
-   "overdue":"",
-   "startDatetime":"",
-   "flighttime":"",
-   "callsign":"",                                   # to add
-   "eta":"",
-   "ets":"",
-   "landingDatetime":"",
-   "flightDuration":None,
-   "status":"",
-   "customerId":None,
-   "additionalInformation":""                       # to add
-}
 
 # next we parse every airport name, and see if there is data for that
 counter = 0
@@ -106,17 +32,82 @@ for airport, password in airport_to_send.items():
     new_movement = query(f"SELECT * FROM \"TREATED_DATA\" WHERE tdSent = '0' AND tdAirport = '{airport}';")
     if new_movement:
         for movement in new_movement:
-            tmp_json = format_json.copy()
+            format_json = {
+                    "createdAt":None,                          # to add
+                    "createdBy":"etdex",
+                    "airport":None,                            # to add
+                    "airtrackCustomerId":None,
+                    "flighttype":None,
+                    "navigation":None,
+                    "trafficstatus":None,
+                    "joiningpoints":None,
+                    "canceled":None,
+                    "pax":None,
+                    "crew":None,
+                    "parkingMinutes":None,
+                    "parkingHours":None,
+                    "parkingMonths":None,
+                    "parkingDays":None,
+                    "children":None,
+                    "flighttypeCat":None,
+                    "aircraftName":None,                       # to add
+                    "runway":None,
+                    "flightFrom":None,
+                    "flightTo":None,
+                    "flightId":None,
+                    "aircraftType":None,
+                    "flightTimeEstimated":None,
+                    "dof":None,
+                    "flightlevel":None,                        # add ?
+                    "speed":None,                              # add ?
+                    "flightway":None,
+                    "flightheight":None,
+                    "weightCat":None,
+                    "properties":None,
+                    "vfrPoint":None,
+                    "locked":None,
+                    "flightplan":None,
+                    "flightplanText":None,
+                    "tagged":None,
+                    "computerName":None,
+                    "departure":None,
+                    "lastinfo":None,
+                    "pilot":None,
+                    "squawk":None,
+                    "infoText":None,
+                    "atis":None,
+                    "smap":None,
+                    "qnh":None,
+                    "slot":None,
+                    "readback":None,
+                    "executor":None,
+                    "freight":None,
+                    "generalRemarks":None,
+                    "uniqueId":None,
+                    "overdue":None,
+                    "startDatetime":None,
+                    "flighttime":None,
+                    "callsign":None,                                   # to add
+                    "eta":None,
+                    "ets":None,
+                    "landingDatetime":None,
+                    "flightDuration":None,
+                    "status":None,
+                    "customerId":None,
+                    "additionalInformation":None                       # to add
+                }
 
             # we add all data from the landing to an empty dict
             airplane_time = datetime.utcfromtimestamp(movement[3]).strftime("%Y-%m-%dT%H:%m:%S+00:00")
-            tmp_json["createdAt"] = airplane_time
-            tmp_json["airport"] = movement[1]
-            tmp_json["aircraftName"] = movement[2]
-            tmp_json["callsign"] = movement[2]
-            tmp_json["additionalInformation"] = f"{{prob: {movement[4]}}}"
+            format_json["createdAt"] = airplane_time
+            format_json["airport"] = movement[1]
+            format_json["aircraftName"] = movement[2]
+            format_json["callsign"] = movement[2]
+            format_json["additionalInformation"] = f"{{prob: {movement[4]}}}"
 
-            response = requests.post(URL, data=tmp_json, auth=(airport, password))
+            format_json = json.dumps(format_json)
+
+            response = requests.post(URL, data=format_json, auth=(airport, password))
 
             if response.status_code == 200:
                 # if the landing has been sent, we print it ...
