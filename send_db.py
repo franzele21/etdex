@@ -14,15 +14,17 @@ print_c = lambda text : print_context(FILENAME, text)
 conn = create_connection(DATABASE_PATH)
 query = lambda x: query_to_bdd(conn, FILENAME, x)
 
+# we retrieve all treated movement, that weren't sent
 all_airplanes = query("SELECT * FROM \"TREATED_DATA\" WHERE tdSent = '0';")
 
-if all_airplanes and all_airplanes != "locked": 
+# we close the program if there was a problem, else, we fetchall data
+if all_airplanes: 
     all_airplanes = all_airplanes.fetchall()
 else:
-    print_context(FILENAME, "Error: no new airplane found", True)
     conn.close()
     exit()
 
+# we look up which for which airport we need to send the data
 with open(AIRPORT_SEND_FILE) as file:
     airport_to_send = json.loads(file.read())
 
@@ -91,6 +93,7 @@ format_json = {
    "additionalInformation":""                       # to add
 }
 
+# next we parse every airport name, and see if there is data for that
 counter = 0
 for airport, password in airport_to_send.items():
     print_c(f"Sending movement from {airport}...")
@@ -99,6 +102,7 @@ for airport, password in airport_to_send.items():
         for movement in new_movement:
             tmp_json = format_json.copy()
 
+            # we add all data from the landing to an empty dict
             airplane_time = datetime.utcfromtimestamp(movement[3]).strftime("%Y-%m-%dT%H:%m:%S+00:00")
             tmp_json["createdAt"] = airplane_time
             tmp_json["airport"] = movement[1]
@@ -109,14 +113,19 @@ for airport, password in airport_to_send.items():
             response = requests.post(URL, data=tmp_json, auth=(airport, password))
 
             if response.status_code == 200:
+                # if the landing has been sent, we print it ...
                 print_c(f"Movement sent: {movement[2]} to {movement[1]} at {airplane_time}")
+                # ... update the movement to "sent" ...
                 query(f"""
                         UPDATE "TREATED_DATA"
                         SET tdSent = '1'
                         WHERE tdId = '{movement[0]}';
                     """)
+                # and add one to the counter
                 counter += 1
             else:
+                # if the status code isn't 200, print a error message
+                # with the database id of the movement
                 print_c(f"Error: {response} for {movement[0]}\n{response.text}")
 
 print_c(f"Number of sent movements: {counter}")
