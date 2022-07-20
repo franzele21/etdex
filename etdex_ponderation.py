@@ -1,3 +1,8 @@
+"""
+This program calculate the probabilty of a landing, with different 
+sources
+"""
+
 import jellyfish
 import json
 import time
@@ -17,12 +22,13 @@ LANDING_APPROVAL_PROB = 0.75            # probability
 PPR_DELTA_TIME = 3                      # in hour
 AFTN_DELTA_TIME = 20                    # in minutes
 DELAY_BETWEEN_LANDINGS = 1              # in hour
-DATABASE_PATH = "database.db"
+DATABASE_PATH = "database.db"           # output file
+SEND_LANDING_PROGRAM = "send_db.py"     # program that sends the landing
 PONDERATION_FILE = "ponderation.json"
 POSSIBLE_LANDINGS_ADSB_FILE = "airport_by_zone.json"
 PPR_FILE = "output_ppr.json"
 AFTN_FILE = "data_traffic.json"
-FILENAME = os.path.basename(__file__)
+FILENAME = os.path.basename(__file__)   # name of this file
 CYCLE_TIME = 900                        # in seconds
 
 print_c = lambda text : print_context(FILENAME, text)
@@ -504,8 +510,9 @@ while True:
                     """)
     conn.close()
 
+    # here we call the program that sends the landings to the API
     print_c("Sending data to the AVDB API...")
-    os.system("python3 send_db.py")
+    os.system(f"python3 {SEND_LANDING_PROGRAM}")
 
     print_c("end of the routine")
     time.sleep(CYCLE_TIME)
