@@ -63,6 +63,9 @@ sqlite3.Cursor or None
         return False
 
 class bcolors:
+    """
+Class with the color used for the terminal output
+    """
     reset="\033[0m"       # Text Reset
 
     get_airplane = "\033[1;94m"                 # blue
@@ -106,7 +109,7 @@ None
     output_file = output_file.ljust(45)
 
     if is_error:
-        message = f"{bcolors.error}{message}"
+        message = f"{bcolors.error}{message}{bcolors.reset}"
 
     print(f"{output_time} | {output_file} {message}")
 
