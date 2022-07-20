@@ -53,6 +53,7 @@ if table_exists[0][0] == 0:
                 PRIMARY KEY ("apRegis") );
         """)
 
+# if this program is executed before an get_airplane
 table_exists = query("SELECT count(name) FROM sqlite_master WHERE type = 'table' AND name = 'AIRPLANE';").fetchall()
 
 if table_exists[0][0] == 0:
@@ -84,10 +85,13 @@ airplanes = query("SELECT DISTINCT apRegis FROM \"AIRPLANE\" WHERE 1;").fetchall
 for airplane in airplanes:
     wait_unlock_db(query, DATABASE_PATH, FILENAME)
     airplane_name = airplane[0]
+    # for a registration name, we see the different invisible status
     same_airplane = query(f"SELECT DISTINCT apInvisible FROM \"AIRPLANE\" WHERE apRegis = '{airplane_name}';")
-    if same_airplane != False:
+    if same_airplane:
         same_airplane = [item[0] for item in same_airplane]
         if 0 in same_airplane:
+            # 0 = still tracking, so there is at least one tracking service that
+            # still detects the airplane.
             # with those deletion, we keep the only sources that can still track
             query(f"""
                     DELETE FROM \"AIRPLANE\"
@@ -95,6 +99,8 @@ for airplane in airplanes:
                     AND apInvisible = '1';
                 """)
         else:
+            # None of the tracking services can track this airplane, so it is
+            # really invisible
             last_seen = query(f"""
                                 SELECT * FROM "AIRPLANE"
                                 WHERE apTime = (
