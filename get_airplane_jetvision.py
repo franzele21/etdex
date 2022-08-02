@@ -147,7 +147,7 @@ auth = (user, api_key)
 response = requests.get('https://mlat.jetvision.de/mlat/aircraftlist.json', headers=headers, auth=auth)
 
 if response.status_code != 200:
-    print_context("ERROR: there was a problem during the request (statuscode: {response.status_code})")
+    print_c("ERROR: there was a problem during the request (statuscode: {response.status_code})")
     print_c("anormal end of the routine")
     exit()
 
