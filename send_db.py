@@ -106,6 +106,7 @@ for airport, password in airport_to_send.items():
             # we add all data from the landing to an empty dict
             airplane_time = datetime.utcfromtimestamp(movement[3]).strftime("%Y-%m-%dT%H:%m:%S+00:00")
             format_json["createdAt"] = airplane_time
+            format_json["landing_datetime"] = airplane_time
             format_json["airport"] = movement[1]
             format_json["aircraftName"] = movement[2]
             format_json["callsign"] = movement[2]
