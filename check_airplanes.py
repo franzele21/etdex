@@ -7,6 +7,7 @@ times on different API
 import time
 from functions import *
 import os
+import json
 
 # final variable of how many minutes it takes to consider, that an
 # airplane is really disappeared from the radars (in minutes)
@@ -19,7 +20,7 @@ MIN_VELOCITY = 5
 # path to the database
 DATABASE_PATH = "airplane.db"
 FILENAME = os.path.basename(__file__)
-CYCLE_TIME = 100 
+SAVE_FILE = "save_airplane.json"
 
 print_c = lambda text : print_context(FILENAME, text)
 
@@ -79,6 +80,8 @@ for airplane in airplanes:
                 WHERE apRegis = '{airplane[0]}';
             """)
 
+save_data_list = []
+
 print_c("adding new airplanes")
 # add the airplane if it is really invisible in the INVISIBLE_AIRPLANE table
 airplanes = query("SELECT DISTINCT apRegis FROM \"AIRPLANE\" WHERE 1;").fetchall()
@@ -120,6 +123,17 @@ for airplane in airplanes:
                             '{last_seen[2]}', '{last_seen[3]}', '{last_seen[4]}', 
                             '{last_seen[5]}', '{last_seen[6]}', '{last_seen[8]}')
                         """)
+                    save_data_list.append({"regis": last_seen[0], 
+                                            "coords": {
+                                                "latitude": last_seen[1], 
+                                                "longitude": last_seen[2]
+                                            }, 
+                                            "altitude": last_seen[3], 
+                                            "time": last_seen[4], 
+                                            "velocity": last_seen[5], 
+                                            "heading": last_seen[6], 
+                                            "source": last_seen[9]
+                                        })
 
                 query(f"""
                         DELETE FROM \"AIRPLANE\"
@@ -156,6 +170,17 @@ for airplane in airplanes:
                         '{last_seen[2]}', '{last_contact}', '{last_seen[4]}', 
                         '{last_seen[5]}', '{last_seen[6]}', '{last_seen[8]}')
                     """)
+                save_data_list.append({"regis": last_seen[0], 
+                                        "coords": {
+                                            "latitude": last_seen[1], 
+                                            "longitude": last_seen[2]
+                                        }, 
+                                        "altitude": last_seen[3], 
+                                        "time": last_seen[4], 
+                                        "velocity": last_seen[5], 
+                                        "heading": last_seen[6], 
+                                        "source": last_seen[9]
+                                        })
 
             query(f"""
                     DELETE FROM \"AIRPLANE\"
@@ -173,5 +198,22 @@ for airplane in airplanes:
             """)
 
 conn.close()
+
+try:
+    with open(SAVE_FILE) as file:
+        content = json.loads(file.read())
+    last_id = max([int(x) for x in content.keys()])
+    last_id += 1
+except (FileNotFoundError, json.decoder.JSONDecodeError):
+    file = open(SAVE_FILE, "w+")
+    content = {}
+    last_id = 0
+    
+new_content = {str(last_id + i): item for i, item in enumerate(save_data_list)}
+
+new_content = content | new_content
+
+with open(SAVE_FILE, "w+") as file:
+    file.write(json.dumps(new_content, indent=2))
 
 print_c("end of the routine")
