@@ -252,7 +252,7 @@ while True:
             all_ppr = content["new_ppr"]
     else:
         ppr_been_read = True
-        all_ppr = []
+        all_ppr = {}
 
     if exists(AFTN_FILE):
         with open(AFTN_FILE) as aftn_file:
@@ -308,8 +308,8 @@ while True:
             # accept from 1 to 3 different airports, but if the numbers of 
             # airports is greater than 3, the probability will not be high 
             # enough, and will not be accepted by evidence_probability
-            min_prob = 0.6
-            weight_prob = 0.9
+            min_prob = 0.5
+            weight_prob = 0.8
             tracked_airplane_probability = min_prob + (weight_prob / len(tracking[tracked_airplane]["airport"]))
             # it's a probability, so it has to be <=1
             tracked_airplane_probability = min(1, tracked_airplane_probability)
@@ -318,21 +318,52 @@ while True:
             tracked_airplane_time = tracking[tracked_airplane]["last_contact"]
 
             for possible_airport in tracking[tracked_airplane]["airport"]:
-                query(f"""
-                            INSERT INTO "UNTREATED_DATA"
-                            (udAirport, udRegis, udProbability, udSource, udTime)
-                            VALUES ('{possible_airport["regis"]}', '{tracked_airplane}',
-                            '{tracked_airplane_probability}', 'airTracker', 
-                            '{tracked_airplane_time}');
-                        """)
+                if tracked_airplane_probability > LANDING_APPROVAL_PROB:
+                    query(f"""
+                                INSERT INTO "UNTREATED_DATA"
+                                (udAirport, udRegis, udProbability, udSource, udTime)
+                                VALUES ('{possible_airport["regis"]}', '{tracked_airplane}',
+                                '{tracked_airplane_probability}', 'airTracker', 
+                                '{tracked_airplane_time}');
+                            """)
 
     # here are all the PPRs going to be checked, and if one has the same 
     # destination airport and same airplane. If one same landing has be 
     # found, the landing will have a 100% of probability
     print_c("Adding and treating the PPR...")
-    if not ppr_been_read:
+    number_ppr = query("SELECT COUNT(udId) FROM \"UNTREATED_DATA\" WHERE udSource = \"PPR\";").fetchone()[0]
+    if not ppr_been_read or number_ppr > 0:
         with open(PPR_FILE, "w+") as file:
             file.write(json.dumps({"been_read": True, "new_ppr": all_ppr}))
+
+        # if the ppr has been read, we reset the variable
+        all_ppr = {} if ppr_been_read else all_ppr
+
+        # we take the last ppr
+        max_id = [int(x) for x in all_ppr]
+        if len(max_id) == 0:
+            max_id = 0
+        else:
+            max_id = max(max_id)
+
+        # we add the ppr that are already in the database
+        ppr_in_db = query("""
+                                SELECT * 
+                                FROM "UNTREATED_DATA"
+                                WHERE udSource = "PPR";
+                            """).fetchall()
+        older_ppr = {}
+        for index, item in enumerate(ppr_in_db):
+            older_ppr[str(max_id + index)] = {
+                "airport": item[1],
+                "arrivingFrom": item[1],
+                "departingTo": item[1],
+                "licenceNumber": item[2],
+                "arrival": datetime.utcfromtimestamp(int(item[6])).strftime("%a, %d %b %Y %H:%M:%S UTC"),
+                "departure": datetime.utcfromtimestamp(int(item[6])).strftime("%a, %d %b %Y %H:%M:%S UTC")
+            }
+
+        all_ppr = older_ppr | all_ppr
         for ppr_id in all_ppr:
             departing_airport = all_ppr[ppr_id]["departingTo"]
             present_airport = all_ppr[ppr_id]["airport"]
@@ -361,13 +392,15 @@ while True:
                                 FROM \"UNTREATED_DATA\" 
                                 WHERE udAirport = '{departing_airport}'
                                 OR udAirport = '{present_airport}'
-                                AND udRegis = '{airplane}';
+                                AND udRegis = '{airplane}'
+                                AND udSource != 'PPR';
                             """)
             landings = landings.fetchall()
 
             for landing_data in landings:
                 same_landing_departing = False
                 same_landing_present = False
+                added = False
 
                 # first check if the ppr is usable for its destination
                 if landing_data[2] == departing_airport:
@@ -375,6 +408,7 @@ while True:
                     if landing_data[1] > departure_time and \
                             landing_data[1] < departure_time + time_limit:
                         same_landing_departing = True
+                        added = True
 
                 # then check if the ppr is usable for its present airport
                 if landing_data[2] == present_airport:
@@ -385,7 +419,8 @@ while True:
                     if landing_data[1] > min_time \
                             and landing_data[1] < max_time:
                         same_landing_present = True
-                
+                        added = True
+
                 if same_landing_departing:
                     query(f"""
                             INSERT INTO "TREATED_DATA"
@@ -393,20 +428,30 @@ while True:
                             VALUES ('{departing_airport}', '{airplane}', 
                             '{landing_data[1]}', '1', '0');
                         """)
+                    query(f"""
+                            DELETE FROM "UNTREATED_DATA"
+                            WHERE udAirport = '{departing_airport}'
+                            AND udRegis = '{airplane}';
+                        """)
                 if same_landing_present:
                     query(f"""
                             INSERT INTO "TREATED_DATA"
                             (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
-                            VALUES ('{present_airport}', '{airplane}'
+                            VALUES ('{present_airport}', '{airplane}',
                             '{landing_data[1]}', '1', '0');
                         """)
+                    query(f"""
+                            DELETE FROM "UNTREATED_DATA"
+                            WHERE udAirport = '{present_airport}'
+                            AND udRegis = '{airplane}';
+                        """)
 
-            if len(landings) == 0:
+            if len(landings) == 0 or not added and int(ppr_id) <= max_id:
                 query(f"""
                         INSERT INTO "UNTREATED_DATA"
                         (udAirport, udRegis, udTime, udProbability, udSource)
                         VALUES ('{departing_airport}', '{airplane}', 
-                        '{departure_time}', '{ponderation["PPR"]["default"]/100.0}', 'PPR');
+                        '{departure_time}', '1', 'PPR');
                     """)
 
 
