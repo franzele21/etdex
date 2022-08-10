@@ -354,16 +354,17 @@ while True:
                             """).fetchall()
         older_ppr = {}
         for index, item in enumerate(ppr_in_db):
-            older_ppr[str(max_id + index)] = {
+            older_ppr[str(max_id + index + 1)] = {
                 "airport": item[1],
                 "arrivingFrom": item[1],
                 "departingTo": item[1],
-                "licenceNumber": item[2],
+                "licenseNumber": item[2],
                 "arrival": datetime.utcfromtimestamp(int(item[6])).strftime("%a, %d %b %Y %H:%M:%S UTC"),
                 "departure": datetime.utcfromtimestamp(int(item[6])).strftime("%a, %d %b %Y %H:%M:%S UTC")
             }
 
         all_ppr = older_ppr | all_ppr
+        print(all_ppr, max_id)
         for ppr_id in all_ppr:
             departing_airport = all_ppr[ppr_id]["departingTo"]
             present_airport = all_ppr[ppr_id]["airport"]
@@ -388,10 +389,10 @@ while True:
             # searching for all landings, that could have been at the present
             # or the destination airport from the PPR
             landings = query(f"""
-                                SELECT udId, udTime, udAirport 
+                                SELECT udId, udTime, udAirport, udSource 
                                 FROM \"UNTREATED_DATA\" 
-                                WHERE udAirport = '{departing_airport}'
-                                OR udAirport = '{present_airport}'
+                                WHERE (udAirport = '{departing_airport}'
+                                OR udAirport = '{present_airport}')
                                 AND udRegis = '{airplane}'
                                 AND udSource != 'PPR';
                             """)
@@ -446,7 +447,8 @@ while True:
                             AND udRegis = '{airplane}';
                         """)
 
-            if len(landings) == 0 or not added and int(ppr_id) <= max_id:
+            if (len(landings) == 0 or not added) and int(ppr_id) <= max_id:
+                print(int(ppr_id), int(ppr_id) <= max_id)
                 query(f"""
                         INSERT INTO "UNTREATED_DATA"
                         (udAirport, udRegis, udTime, udProbability, udSource)
@@ -490,6 +492,21 @@ while True:
                             WHERE udAirport = '{evidence["airport"]}'
                             AND udRegis = '{evidence["regis"]}'
                         """)
+
+    print_c("Verify PPR on the treated data...")
+    ppr_in_db = query("SELECT udAirport, udRegis, udTime FROM UNTREATED_DATA WHERE udSource = 'PPR';").fetchall()
+    print(ppr_in_db)
+    for ppr in ppr_in_db:
+        print(ppr)
+        query(f"""
+                UPDATE \"TREATED_DATA\"
+                SET tdProb = '1' 
+                WHERE tdAirport = '{ppr[0]}'
+                AND tdAirplane = '{ppr[1]}'
+                AND tdTime > '{ppr[2] - PPR_DELTA_TIME * 60 * 60}'
+                AND tdTime < '{ppr[2] + PPR_DELTA_TIME * 60 * 60}';
+            """)
+
 
     print_c("Adding and treating the new AFTN messages...")
     if not aftn_data["been_read"]:
