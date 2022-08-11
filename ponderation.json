@@ -1,9 +1,9 @@
 {
 	"airTracker": {
-		"default": 85
+		"default": 80
 	},
 	"PPR": {
-		"default": 70
+		"default": 90
 	},
 	"AFTN": {
 		"default": 100
