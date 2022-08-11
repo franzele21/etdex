@@ -495,9 +495,7 @@ while True:
 
     print_c("Verify PPR on the treated data...")
     ppr_in_db = query("SELECT udAirport, udRegis, udTime FROM UNTREATED_DATA WHERE udSource = 'PPR';").fetchall()
-    print(ppr_in_db)
     for ppr in ppr_in_db:
-        print(ppr)
         query(f"""
                 UPDATE \"TREATED_DATA\"
                 SET tdProb = '1' 
