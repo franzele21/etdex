@@ -7,6 +7,8 @@ import jellyfish
 import json
 import time
 import os
+import requests
+from geopy import distance
 from os.path import exists
 from functions import *
 from datetime import datetime
@@ -16,20 +18,22 @@ from datetime import datetime
 os.environ["TZ"] = "UTC"
 time.tzset()
 
-LANDING_TIME = 15                       # in minutes
-CORRELATION_APPROVAL_PROB = 0.5         # probability
-LANDING_APPROVAL_PROB = 0.75            # probability
-PPR_DELTA_TIME = 3                      # in hour
-AFTN_DELTA_TIME = 20                    # in minutes
-DELAY_BETWEEN_LANDINGS = 1              # in hour
-DATABASE_PATH = "database.db"           # output file
-SEND_LANDING_PROGRAM = "send_db.py"     # program that sends the landing
-PONDERATION_FILE = "ponderation.json"
+LANDING_TIME                = 15                            # in minutes
+LANDING_DITANCE             = 2                             # in km
+CORRELATION_APPROVAL_PROB   = 0.5                           # probability
+LANDING_APPROVAL_PROB       = 0.75                          # probability
+PPR_DELTA_TIME              = 3                             # in hour
+AFTN_DELTA_TIME             = 20                            # in minutes
+DELAY_BETWEEN_LANDINGS      = 1                             # in hour
+DATABASE_PATH               = "database.db"                 # output file
+SEND_LANDING_PROGRAM        = "send_db.py"                  # program that sends the landing
+PONDERATION_FILE            = "ponderation.json"
 POSSIBLE_LANDINGS_ADSB_FILE = "airport_by_zone.json"
-PPR_FILE = "output_ppr.json"
-AFTN_FILE = "data_traffic.json"
-FILENAME = os.path.basename(__file__)   # name of this file
-CYCLE_TIME = 900                        # in seconds
+PPR_FILE                    = "output_ppr.json"
+AFTN_FILE                   = "data_traffic.json"
+AIRPORT_AUTH_PATH           = "auth_avdb.json"
+FILENAME                    = os.path.basename(__file__)    # name of this file
+CYCLE_TIME                  = 900                           # in seconds
 
 print_c = lambda text : print_context(FILENAME, text)
 
@@ -81,17 +85,20 @@ Returns
 float
     Correlation between evidence1 and evidence2 
     """
-    print(evidence1)
+def prob_same_landing(evidence1: tuple, evidence2: tuple) -> float:
+    ev1, ev2 = evidence1, evidence2
+
+
     id_probability = 0
     time_probability = 0
     distance_probability = 0
 
     # first we calculate if the name could be the same
-    diff_letter = jellyfish.hamming_distance(evidence1[2], evidence2[2])
-    id_probability = 1 - diff_letter / len(evidence1[2])
+    diff_letter = jellyfish.hamming_distance(ev1[2], ev2[2])
+    id_probability = 1 - (diff_letter / len(ev1[2])) * 1.5
 
     # then if its in the same time span
-    delta_time = evidence1[6] - evidence2[6]
+    delta_time = ev1[6] - ev2[6]
     delta_time = abs(delta_time / 60) + 1
     
     prob_calc = lambda lt, ts : (lt/ts) - (ts/(lt*2)) + ((lt/2)/lt)
@@ -100,12 +107,23 @@ float
     time_probability = time_probability if time_probability < 1 else 1
 
     # finally if it's in the same zone
+    if (not isinstance(ev1[7], type(None)) or ev1[7] != 0) \
+            and (not isinstance(ev1[8], type(None)) or ev1[8] != 0) \
+            and (not isinstance(ev2[7], type(None)) or ev2[7] != 0) \
+            and (not isinstance(ev2[8], type(None)) or ev2[8] != 0):
 
+        prob_calc = lambda ld, ds : (ld/ds) - (ds/ld) + (ds/1)/ds
 
-
-    final_probability = (id_probability + time_probability) / 2
+        evidence_distance = distance.distance((ev1[7], ev1[8]), (ev2[7], ev2[8])).km + 0.1
+        distance_probability = min(1, prob_calc(LANDING_DITANCE, evidence_distance))
+    else:
+        distance_probability = max(0, (id_probability + time_probability) / 2)
+    
+    final_probability = max(0, (id_probability + time_probability + distance_probability) / 3)
 
     return final_probability
+
+
 
 
 def get_probability(evidence1: tuple, evidence2: tuple) -> float:
@@ -203,6 +221,7 @@ it was, and i's probability)
 
     return evidence_prob
 
+
 def get_aftn(aftn_message: dict) -> dict:
     """
 Transform the aftn message in a more readable message, with only the 
@@ -239,6 +258,10 @@ the program, but now it needs to be translated.
 
 with open(PONDERATION_FILE) as ponderation_file:
     ponderation = json.loads(ponderation_file.read())
+
+with open(AIRPORT_AUTH_PATH) as file:
+    content = json.loads(file.read())
+    user_avdb, password_avdb = content["user"], content["password"]
 
 while True:
     print_c("begin of the routine")
@@ -459,11 +482,18 @@ while True:
                         """)
 
             if (len(landings) == 0 or not added) and int(ppr_id) <= max_id:
+                response = requests.get("https://avdb.aerops.com/public/airports", 
+                                auth=(user_avdb, password_avdb))
+                data = json.loads(response.text)["data"]
+
+                coords = [(x["latitude"], x["longitude"]) for x in data if x["name"] == departing_airport]
+                coords = coords[0] if len(coords) > 0 else (None, None)
+
                 query(f"""
                         INSERT INTO "UNTREATED_DATA"
-                        (udAirport, udRegis, udTime, udProbability, udSource)
+                        (udAirport, udRegis, udTime, udProbability, udSource, udLatitude, udLongitude)
                         VALUES ('{departing_airport}', '{airplane}', 
-                        '{departure_time}', '1', 'PPR');
+                        '{departure_time}', '1', 'PPR', '{coords[0]}', '{coords[1]}');
                     """)
 
 
