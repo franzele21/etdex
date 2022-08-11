@@ -59,7 +59,7 @@ list
     return final_list
 
 
-def find_probability(evidence1: tuple, evidence2: tuple) -> float:
+def prob_same_landing(evidence1: tuple, evidence2: tuple) -> float:
     """
 Used to see if the two evidence could refer to the same landing. 
 For example, if an evidence points that an airplane x1 landed at airport 
@@ -81,12 +81,16 @@ Returns
 float
     Correlation between evidence1 and evidence2 
     """
+    print(evidence1)
     id_probability = 0
     time_probability = 0
+    distance_probability = 0
 
+    # first we calculate if the name could be the same
     diff_letter = jellyfish.hamming_distance(evidence1[2], evidence2[2])
     id_probability = 1 - diff_letter / len(evidence1[2])
 
+    # then if its in the same time span
     delta_time = evidence1[6] - evidence2[6]
     delta_time = abs(delta_time / 60) + 1
     
@@ -95,7 +99,10 @@ float
     time_probability = prob_calc(LANDING_TIME, delta_time)
     time_probability = time_probability if time_probability < 1 else 1
 
-    
+    # finally if it's in the same zone
+
+
+
     final_probability = (id_probability + time_probability) / 2
 
     return final_probability
@@ -162,7 +169,7 @@ it was, and i's probability)
 
                     # here we will see if the two evidence could refer
                     #  to the same landing
-                    if find_probability(evidence1, evidence2) > CORRELATION_APPROVAL_PROB:
+                    if prob_same_landing(evidence1, evidence2) > CORRELATION_APPROVAL_PROB:
                         evidence_correlation[evidence1].append(evidence2)
                         verified_evidences.append(evidence2)
     
@@ -279,6 +286,8 @@ while True:
                     "udSource" TEXT, 
                     "udSource2" TEXT,
                     "udTime" INTEGER, 
+                    "udLatitude" REAL,
+                    "udLongitude" REAL,
                     PRIMARY KEY("udId" AUTOINCREMENT) 
                 );
                 """)
@@ -321,10 +330,12 @@ while True:
                 if tracked_airplane_probability > LANDING_APPROVAL_PROB:
                     query(f"""
                                 INSERT INTO "UNTREATED_DATA"
-                                (udAirport, udRegis, udProbability, udSource, udTime)
+                                (udAirport, udRegis, udProbability, udSource, udTime, udLatitude, udLongitude)
                                 VALUES ('{possible_airport["regis"]}', '{tracked_airplane}',
                                 '{tracked_airplane_probability}', 'airTracker', 
-                                '{tracked_airplane_time}');
+                                '{tracked_airplane_time}', 
+                                '{tracking[tracked_airplane]["coords"]["latitude"]}',
+                                '{tracking[tracked_airplane]["coords"]["longitude"]}');
                             """)
 
     # here are all the PPRs going to be checked, and if one has the same 
