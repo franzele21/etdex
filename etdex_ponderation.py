@@ -364,7 +364,7 @@ while True:
             }
 
         all_ppr = older_ppr | all_ppr
-        print(all_ppr, max_id)
+
         for ppr_id in all_ppr:
             departing_airport = all_ppr[ppr_id]["departingTo"]
             present_airport = all_ppr[ppr_id]["airport"]
@@ -448,7 +448,6 @@ while True:
                         """)
 
             if (len(landings) == 0 or not added) and int(ppr_id) <= max_id:
-                print(int(ppr_id), int(ppr_id) <= max_id)
                 query(f"""
                         INSERT INTO "UNTREATED_DATA"
                         (udAirport, udRegis, udTime, udProbability, udSource)
