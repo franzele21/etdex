@@ -25,6 +25,7 @@ LANDING_APPROVAL_PROB       = 0.75                          # probability
 PPR_DELTA_TIME              = 3                             # in hour
 AFTN_DELTA_TIME             = 20                            # in minutes
 DELAY_BETWEEN_LANDINGS      = 1                             # in hour
+BONUS_WEIGHT                = 5                             # probability
 DATABASE_PATH               = "database.db"                 # output file
 SEND_LANDING_PROGRAM        = "send_db.py"                  # program that sends the landing
 PONDERATION_FILE            = "ponderation.json"
@@ -85,9 +86,7 @@ Returns
 float
     Correlation between evidence1 and evidence2 
     """
-def prob_same_landing(evidence1: tuple, evidence2: tuple) -> float:
     ev1, ev2 = evidence1, evidence2
-
 
     id_probability = 0
     time_probability = 0
@@ -122,8 +121,6 @@ def prob_same_landing(evidence1: tuple, evidence2: tuple) -> float:
     final_probability = max(0, (id_probability + time_probability + distance_probability) / 3)
 
     return final_probability
-
-
 
 
 def get_probability(evidence1: tuple, evidence2: tuple) -> float:
@@ -204,6 +201,8 @@ it was, and i's probability)
                 probability += get_probability(evidence1, evidence2)
                 
             probability = probability / len(evidence_correlation[evidence1]) / 100
+            probability += BONUS_WEIGHT * len(evidence_correlation[evidence1]) / 100
+            probability = 1 if probability > 1 else probability
             
         else:
             if evidence1[5] in ponderation[evidence1[4]].keys():
