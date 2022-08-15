@@ -34,7 +34,22 @@ PPR_FILE                    = "output_ppr.json"
 AFTN_FILE                   = "data_traffic.json"
 AIRPORT_AUTH_PATH           = "auth_avdb.json"
 FILENAME                    = os.path.basename(__file__)    # name of this file
-CYCLE_TIME                  = 900                           # in seconds
+CYCLE_TIME                  = 900 
+TABLES = [
+    {
+        "table_name": "TREATED_DATA", 
+        "id_name": "tdId",
+        "airplane_name": "tdAirplane",
+        "airport_name": "tdAirport",
+        "time_name": "tdTime"
+    }, {
+        "table_name": "UNTREATED_DATA",
+        "id_name": "udId",
+        "airplane_name": "udRegis",
+        "airport_name": "udAirport",
+        "time_name": "udTime"
+    }
+]                          # in seconds
 
 print_c = lambda text : print_context(FILENAME, text)
 
@@ -555,24 +570,32 @@ while True:
             aftn = aftn_data["new_aftn"][aftn_id]
             aftn = get_aftn(aftn)
 
-            landings = query(f"""
-                                SELECT *
-                                FROM "TREATED_DATA"
-                                WHERE tdAirplane = '{aftn["airplane"]}'
-                                AND tdAirport = '{aftn["airport"]}';
-                            """)
-            if not isinstance(landings, type(None))\
-                    and len(landings.fetchall()) > 0:
-                landings = landings.fetchall()
-                for landing in landings:
-                    if landing[3] - AFTN_DELTA_TIME < aftn["time"] \
-                            and landing[3] + AFTN_DELTA_TIME > aftn["time"]:
-                        query(f"""
-                                UPDATE "TREATED_DATA"
-                                SET tdProb = '1.0'
-                                WHERE tdId = '{landing[0]}';
-                            """)
+            for table in TABLES:
+                landing = query(f"""
+                                    SELECT {table["id_name"]}
+                                    FROM "{table["table_name"]}"
+                                    WHERE {table["airplane_name"]} = '{aftn["airplane"]}'
+                                    AND {table["airport_name"]} = '{aftn["airport"]}'
+                                    AND {table["time_name"]} BETWEEN '{aftn["time"] - AFTN_DELTA_TIME * 60}' 
+                                                                AND '{aftn["time"] + AFTN_DELTA_TIME * 60}';
+                                """)
+                landing = landing.fetchone()
+
+                if not isinstance(landing, type(None)):
+                    query(f"""
+                        DELETE FROM "{table["table_name"]}"
+                        WHERE {table["id_name"]} = {landing[0]};
+                    """)
+                    query(f"""
+                        INSERT INTO "TREATED_DATA"
+                        (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
+                        VALUES ('{aftn["airport"]}', '{aftn["airplane"]}',
+                        '{aftn["time"]}', '1', '0');
+                    """)
+
+                    break
             else:
+                # if there wasn't an occurence, it will be directly added
                 query(f"""
                         INSERT INTO "TREATED_DATA"
                         (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
