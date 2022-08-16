@@ -34,22 +34,22 @@ PPR_FILE                    = "output_ppr.json"
 AFTN_FILE                   = "data_traffic.json"
 AIRPORT_AUTH_PATH           = "auth_avdb.json"
 FILENAME                    = os.path.basename(__file__)    # name of this file
-CYCLE_TIME                  = 900 
-TABLES = [
-    {
-        "table_name": "TREATED_DATA", 
-        "id_name": "tdId",
-        "airplane_name": "tdAirplane",
-        "airport_name": "tdAirport",
-        "time_name": "tdTime"
-    }, {
-        "table_name": "UNTREATED_DATA",
-        "id_name": "udId",
-        "airplane_name": "udRegis",
-        "airport_name": "udAirport",
-        "time_name": "udTime"
-    }
-]                          # in seconds
+CYCLE_TIME                  = 900                           # in seconds
+TABLES                      = [
+                                {
+                                    "table_name": "TREATED_DATA", 
+                                    "id_name": "tdId",
+                                    "airplane_name": "tdAirplane",
+                                    "airport_name": "tdAirport",
+                                    "time_name": "tdTime"
+                                }, {
+                                    "table_name": "UNTREATED_DATA",
+                                    "id_name": "udId",
+                                    "airplane_name": "udRegis",
+                                    "airport_name": "udAirport",
+                                    "time_name": "udTime"
+                                }
+                            ]                          
 
 print_c = lambda text : print_context(FILENAME, text)
 
