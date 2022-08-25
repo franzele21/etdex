@@ -582,6 +582,7 @@ while True:
                 landing = landing.fetchone()
 
                 if not isinstance(landing, type(None)):
+                    print("if")
                     query(f"""
                         DELETE FROM "{table["table_name"]}"
                         WHERE {table["id_name"]} = {landing[0]};
@@ -596,6 +597,7 @@ while True:
                     break
             else:
                 # if there wasn't an occurence, it will be directly added
+                print("else")
                 query(f"""
                         INSERT INTO "TREATED_DATA"
                         (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
