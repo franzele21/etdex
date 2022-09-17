@@ -8,11 +8,11 @@ from math import pi
 
 
 # used to determine the radius of the small (inner) circle
-sr = lambda x: max(5, x)
+sr = lambda x: min(10, max(3, (x/200)*2))
 # used to determine the radius og the big (outer) circle
-br = lambda x, y: min(40, max(7, 5*(x + 2/y)))
+br = lambda x, y: min(30, max(7, x/25 + y*0.6))
 # used to determine the possible angle of the big circle
-brd = lambda x, y: min(200, max(45, 250*x - 100/y))
+brd = lambda x, y: min(200, max(45, x/4 - y/2))
 
 
 def create_zone(coords_plane: tuple, altitude: float, velocity: float, heading: float) -> tuple:
@@ -37,11 +37,9 @@ Returns
 tuple
     the coordinates of the zone where the airplane could have landed
 """
-
-    # normalize the values 
-    altitude /= 1000
-    velocity *= 3.6
+    
     velocity += 1       # so we escape division by zero
+    altitude += 1
     heading = heading if heading >= 0 else heading + 360
     heading = heading if heading < 360 else heading - 360
 
