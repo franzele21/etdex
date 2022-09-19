@@ -15,7 +15,7 @@ from json import JSONDecodeError
 from airplane_zone import create_zone
 from in_polygon import is_inside_polygon
 
-
+MAXIMUM_ALTITUDE = 1000     # in meters
 # database, where the airplanes are registered
 AIRPLANE_DATABASE = "airplane.db"
 # the path of the output file
@@ -148,32 +148,33 @@ for airplane in airplanes:
     except:
         continue
 
-    # create the zone on which the airplane can land
-    airplane_zone = create_zone((airplane["latitude"], 
-                                airplane["longitude"]),
-                                airplane["altitude"],
-                                airplane["velocity"],
-                                airplane["heading"])
-    for airport in airports:
-        airport_coords = (float(airport["latitude"]), float(airport["longitude"]))
-        if is_inside_polygon(airplane_zone, airport_coords):
-            # add the airplane as key if it is not already
-            if airplane["callname"] not in airport_in_zone.keys():
-                airport_in_zone[airplane["callname"]] = {"coords": {
-                                                            "latitude": airplane["latitude"],
-                                                            "longitude": airplane["longitude"]
-                                                            },
-                                                        "last_contact": airplane["last_contact"],
-                                                        "airport": []
-                                                        }
-            # add the airport, if it is possible to the airplane to 
-            # land there
-            airport_in_zone[airplane["callname"]]["airport"].append({"regis" : airport["name"],
-                                                                    "coords" : {
-                                                                        "latitude": airport_coords[0],
-                                                                        "longitude": airport_coords[1]
-                                                                        }
-                                                                    })
+    if airplane["altitude"] < MAXIMUM_ALTITUDE:
+        # create the zone on which the airplane can land
+        airplane_zone = create_zone((airplane["latitude"], 
+                                    airplane["longitude"]),
+                                    airplane["altitude"],
+                                    airplane["velocity"],
+                                    airplane["heading"])
+        for airport in airports:
+            airport_coords = (float(airport["latitude"]), float(airport["longitude"]))
+            if is_inside_polygon(airplane_zone, airport_coords):
+                # add the airplane as key if it is not already
+                if airplane["callname"] not in airport_in_zone.keys():
+                    airport_in_zone[airplane["callname"]] = {"coords": {
+                                                                "latitude": airplane["latitude"],
+                                                                "longitude": airplane["longitude"]
+                                                                },
+                                                            "last_contact": airplane["last_contact"],
+                                                            "airport": []
+                                                            }
+                # add the airport, if it is possible to the airplane to 
+                # land there
+                airport_in_zone[airplane["callname"]]["airport"].append({"regis" : airport["name"],
+                                                                        "coords" : {
+                                                                            "latitude": airport_coords[0],
+                                                                            "longitude": airport_coords[1]
+                                                                            }
+                                                                        })
 if not previous_been_read(OUTPUT_FILE):
     with open(OUTPUT_FILE) as file:
         previous_airport_by_zone = json.loads(file.read())["data"]
