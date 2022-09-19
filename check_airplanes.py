@@ -12,6 +12,8 @@ import json
 # final variable of how many minutes it takes to consider, that an
 # airplane is really disappeared from the radars (in minutes)
 DELAY_INVISIBLE = 5
+# delay between 2 flight of an airplane (in minutes)
+DELAY_FLIGHT = 15
 # final variable, if an invisible airplane is older than that, 
 # it will be deleted (in minutes)
 DELAY_DELETE = 10
@@ -68,7 +70,7 @@ source_list = [item[0] for item in source_list]
 
 # if the airplane hasn't given a signal after DELAY_INVISIBLE minutes,
 # it will registered as invisible
-airplanes = query("SELECT apRegis, apTime FROM \"AIRPLANE\" WHERE apInvisible = '0';")
+airplanes = query("SELECT apRegis, apTime, apSource FROM \"AIRPLANE\" WHERE apInvisible = '0';")
 for airplane in airplanes:
     delta_time = int(time.time()) - airplane[1]
     if delta_time > int(DELAY_INVISIBLE * 60):
@@ -77,7 +79,8 @@ for airplane in airplanes:
                 UPDATE "AIRPLANE"
                 SET apInvisible = '1',
                 apInvisibleTime = '{int(time.time())}'
-                WHERE apRegis = '{airplane[0]}';
+                WHERE apRegis = '{airplane[0]}'
+                AND apSource = '{airplane[2]}';
             """)
 
 save_data_list = []
@@ -113,7 +116,13 @@ for airplane in airplanes:
                             """)
             last_seen = last_seen.fetchone()
             if not isinstance(last_seen, type(None)):
-                is_in_db = query(f"SELECT count(apRegis) FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = '{last_seen[0]}';")
+                is_in_db = query(f"""
+                                    SELECT count(apRegis) 
+                                    FROM \"INVISIBLE_AIRPLANE\" 
+                                    WHERE apRegis = '{last_seen[0]}'
+                                    AND apTime BETWEEN '{last_seen[4] - DELAY_FLIGHT * 60}'
+                                                    AND '{last_seen[4] + DELAY_FLIGHT * 60}';
+                                """)
                 is_in_db = is_in_db.fetchall() if is_in_db else [[0]]
 
                 if is_in_db[0][0] == 0:
@@ -159,7 +168,13 @@ for airplane in airplanes:
                         """)
         last_seen = last_seen.fetchone()
         if not isinstance(last_seen, type(None)):
-            is_in_db = query(f"SELECT count(apRegis) FROM \"INVISIBLE_AIRPLANE\" WHERE apRegis = '{last_seen[0]}';")
+            is_in_db = query(f"""
+                                SELECT count(apRegis) 
+                                FROM \"INVISIBLE_AIRPLANE\" 
+                                WHERE apRegis = '{last_seen[0]}'
+                                AND apTime BETWEEN '{last_seen[4] - DELAY_FLIGHT * 60}'
+                                                AND '{last_seen[4] + DELAY_FLIGHT * 60}';
+                            """)
             is_in_db = is_in_db.fetchall() if not isinstance(is_in_db, type(None)) else [[0]]
 
             if is_in_db[0][0] == 0:
