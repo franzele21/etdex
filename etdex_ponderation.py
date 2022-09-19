@@ -8,6 +8,7 @@ import json
 import time
 import os
 import requests
+from math import isclose
 from geopy import distance
 from os.path import exists
 from functions import *
@@ -115,10 +116,9 @@ float
     delta_time = ev1[6] - ev2[6]
     delta_time = abs(delta_time / 60) + 1
     
-    prob_calc = lambda lt, ts : (lt/ts) - (ts/(lt*2)) + ((lt/2)/lt)
+    prob_calc = lambda lt, ts : min(1, (lt/ts) - (ts/(lt*2)) + ((lt/2)/lt))
 
     time_probability = prob_calc(LANDING_TIME, delta_time)
-    time_probability = time_probability if time_probability < 1 else 1
 
     # finally if it's in the same zone
     if (not isinstance(ev1[7], type(None)) or ev1[7] != 0) \
@@ -138,7 +138,7 @@ float
     return final_probability
 
 
-def get_probability(evidence1: tuple, evidence2: tuple) -> float:
+def get_probability(evidence: tuple) -> float:
     """
 Returns the probability of a landing, calculated with the ponderation
 of it's sources
@@ -148,26 +148,19 @@ Parameters
 evidence1 : tuple
     First evidence to find the ponderation, yith the primary source on 
 index 4 and the secondary source on index 5 (index begins at 0)
-evidence2 : tuple
-    Second evidence
 
 Returns
 -------
 float
     Probability of a landing
     """
-    coef1, coef2 = 1, 1
-    if evidence1[5] in ponderation[evidence1[4]].keys():
-        coef1 = ponderation[evidence1[4]][evidence1[5]]
+    coef = 1
+    if evidence[5] in ponderation[evidence[4]].keys():
+        coef = ponderation[evidence[4]][evidence[5]]
     else:
-        coef1 = ponderation[evidence1[4]]["default"]
+        coef = ponderation[evidence[4]]["default"]
     
-    if evidence2[5] in ponderation[evidence2[4]].keys():
-        coef2 = ponderation[evidence2[4]][evidence2[5]]
-    else:
-        coef2 = ponderation[evidence2[4]]["default"]
-
-    prob = (evidence1[3] * coef1 + evidence2[3] * coef2) / (coef1 + coef2) 
+    prob = evidence[3] * (coef/100) 
 
     return prob
 
@@ -210,14 +203,15 @@ it was, and i's probability)
         probability = 0
 
         if len(evidence_correlation[evidence1]) > 0:
+            probability += get_probability(evidence1)
             for evidence2 in evidence_correlation[evidence1]:
                 max_time = evidence1[6] if evidence1[6] > evidence2[6] else evidence2[6]
                 
-                probability += get_probability(evidence1, evidence2)
+                probability += get_probability(evidence2)
                 
-            probability = probability / len(evidence_correlation[evidence1]) / 100
+            probability = probability / (len(evidence_correlation[evidence1])+1)
             probability += BONUS_WEIGHT * len(evidence_correlation[evidence1]) / 100
-            probability = 1 if probability > 1 else probability
+            probability = min(1, probability)
             
         else:
             if evidence1[5] in ponderation[evidence1[4]].keys():
@@ -276,6 +270,14 @@ with open(PONDERATION_FILE) as ponderation_file:
 with open(AIRPORT_AUTH_PATH) as file:
     content = json.loads(file.read())
     user_avdb, password_avdb = content["user"], content["password"]
+
+
+response = requests.get("https://avdb.aerops.com/public/airports", 
+                        auth=(user_avdb, password_avdb))
+airports = json.loads(response.text)["data"]
+
+all_airports_name = [airport["name"] for airport in airports]
+
 
 while True:
     print_c("begin of the routine")
@@ -423,15 +425,15 @@ while True:
                 departure_time = datetime.strptime(departure_time, "%a, %d %b %Y %H:%M:%S %Z")
             elif departure_time != "":
                 departure_time = datetime.strptime(departure_time, "%a %b %d %Y %H:%M:%S %Z%z")
-            else:
-                continue
             departure_time = int(time.mktime(departure_time.timetuple()))
             
             arrival_time = all_ppr[ppr_id]["arrival"]
             if "," in arrival_time:
                 arrival_time = datetime.strptime(arrival_time, "%a, %d %b %Y %H:%M:%S %Z")
-            else:
+            elif arrival_time != "":
                 arrival_time = datetime.strptime(arrival_time, "%a %b %d %Y %H:%M:%S %Z%z")
+            else:
+                continue
             arrival_time = int(time.mktime(arrival_time.timetuple()))
 
             # searching for all landings, that could have been at the present
@@ -446,17 +448,28 @@ while True:
                             """)
             landings = landings.fetchall()
 
+            added = False
             for landing_data in landings:
                 same_landing_departing = False
                 same_landing_present = False
-                added = False
+                
 
                 # first check if the ppr is usable for its destination
                 if landing_data[2] == departing_airport:
                     time_limit = PPR_DELTA_TIME * 60 * 60
                     if landing_data[1] > departure_time and \
                             landing_data[1] < departure_time + time_limit:
-                        same_landing_departing = True
+                        query(f"""
+                                INSERT INTO "TREATED_DATA"
+                                (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
+                                VALUES ('{departing_airport}', '{airplane}', 
+                                '{landing_data[1]}', '1', '0');
+                            """)
+                        query(f"""
+                                DELETE FROM "UNTREATED_DATA"
+                                WHERE udAirport = '{departing_airport}'
+                                AND udRegis = '{airplane}';
+                            """)
                         added = True
 
                 # then check if the ppr is usable for its present airport
@@ -467,49 +480,71 @@ while True:
                     
                     if landing_data[1] > min_time \
                             and landing_data[1] < max_time:
-                        same_landing_present = True
+                        query(f"""
+                                INSERT INTO "TREATED_DATA"
+                                (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
+                                VALUES ('{present_airport}', '{airplane}',
+                                '{landing_data[1]}', '1', '0');
+                            """)
+                        query(f"""
+                                DELETE FROM "UNTREATED_DATA"
+                                WHERE udAirport = '{present_airport}'
+                                AND udRegis = '{airplane}';
+                            """)                        
                         added = True
 
-                if same_landing_departing:
-                    query(f"""
-                            INSERT INTO "TREATED_DATA"
-                            (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
-                            VALUES ('{departing_airport}', '{airplane}', 
-                            '{landing_data[1]}', '1', '0');
-                        """)
-                    query(f"""
-                            DELETE FROM "UNTREATED_DATA"
-                            WHERE udAirport = '{departing_airport}'
-                            AND udRegis = '{airplane}';
-                        """)
-                if same_landing_present:
-                    query(f"""
-                            INSERT INTO "TREATED_DATA"
-                            (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
-                            VALUES ('{present_airport}', '{airplane}',
-                            '{landing_data[1]}', '1', '0');
-                        """)
-                    query(f"""
-                            DELETE FROM "UNTREATED_DATA"
-                            WHERE udAirport = '{present_airport}'
-                            AND udRegis = '{airplane}';
-                        """)
-
-            if (len(landings) == 0 or not added) and int(ppr_id) <= max_id:
+            if not added and int(ppr_id) <= max_id:
                 response = requests.get("https://avdb.aerops.com/public/airports", 
                                 auth=(user_avdb, password_avdb))
                 data = json.loads(response.text)["data"]
 
-                coords = [(x["latitude"], x["longitude"]) for x in data if x["name"] == departing_airport]
-                coords = coords[0] if len(coords) > 0 else (None, None)
+                if present_airport in all_airports_name and arrival_time > 0:
+                    coords = [(x["latitude"], x["longitude"]) for x in data if x["name"] == present_airport]
+                    coords = coords[0] if len(coords) > 0 else (None, None)
 
-                query(f"""
-                        INSERT INTO "UNTREATED_DATA"
-                        (udAirport, udRegis, udTime, udProbability, udSource, udLatitude, udLongitude)
-                        VALUES ('{departing_airport}', '{airplane}', 
-                        '{departure_time}', '1', 'PPR', '{coords[0]}', '{coords[1]}');
-                    """)
+                    query(f"""
+                            INSERT INTO "UNTREATED_DATA"
+                            (udAirport, udRegis, udTime, udProbability, udSource, udLatitude, udLongitude)
+                            VALUES ('{present_airport}', '{airplane}', 
+                            '{arrival_time}', '1', 'PPR', '{coords[0]}', '{coords[1]}');
+                        """)
+                if departing_airport in all_airports_name and departure_time > 0:
+                    coords = [(x["latitude"], x["longitude"]) for x in data if x["name"] == departing_airport]
+                    coords = coords[0] if len(coords) > 0 else (None, None)
 
+                    query(f"""
+                            INSERT INTO "UNTREATED_DATA"
+                            (udAirport, udRegis, udTime, udProbability, udSource, udLatitude, udLongitude)
+                            VALUES ('{departing_airport}', '{airplane}', 
+                            '{departure_time}', '1', 'PPR', '{coords[0]}', '{coords[1]}');
+                        """)
+    
+    print_c("Verify PPR on the treated data...")
+    ppr_in_db = query("SELECT udAirport, udRegis, udTime FROM UNTREATED_DATA WHERE udSource = 'PPR';").fetchall()
+    for ppr in ppr_in_db:
+        has_movement = query(f"""
+                                SELECT COUNT(tdId)
+                                FROM "TREATED_DATA"
+                                WHERE tdAirport = '{ppr[0]}'
+                                AND tdAirplane = '{ppr[1]}'
+                                AND tdTime > '{ppr[2] - PPR_DELTA_TIME * 60 * 60}'
+                                AND tdTime < '{ppr[2] + PPR_DELTA_TIME * 60 * 60}';
+                            """).fetchone()
+        if not isinstance(has_movement, type(None)):
+            query(f"""
+                    UPDATE \"TREATED_DATA\"
+                    SET tdProb = '1' 
+                    WHERE tdAirport = '{ppr[0]}'
+                    AND tdAirplane = '{ppr[1]}'
+                    AND tdTime > '{ppr[2] - PPR_DELTA_TIME * 60 * 60}'
+                    AND tdTime < '{ppr[2] + PPR_DELTA_TIME * 60 * 60}';
+                """)
+            query(f"""
+                    DELETE FROM "UNTREATED_DATA"
+                    WHERE udAirport = '{ppr[0]}'
+                    AND udRegis = '{ppr[1]}'
+                    and udTime = '{ppr[2]}';
+                """)
 
     # here is the data from UNTREATED_DATA going to be treated, this means
     # that it will find all evidences that could refer to the same landing,
@@ -532,7 +567,9 @@ while True:
                                             SELECT count(tdId)
                                             FROM "TREATED_DATA"
                                             WHERE tdAirport = '{evidence["airport"]}' 
-                                            AND tdAirplane = '{evidence["regis"]}';
+                                            AND tdAirplane = '{evidence["regis"]}'
+                                            AND tdTime BETWEEN '{evidence["time"] - DELAY_BETWEEN_LANDINGS * 60 *60}'
+                                                            AND '{evidence["time"] + DELAY_BETWEEN_LANDINGS * 60 *60}';
                                         """).fetchone()[0]
                 if landing_exists == 0:
                     query(f"""
@@ -541,23 +578,13 @@ while True:
                             VALUES ('{evidence["airport"]}', '{evidence["regis"]}', 
                             '{evidence["time"]}', '{evidence["prob"]}', '0');
                         """)
-                    query(f"""
-                            DELETE FROM "UNTREATED_DATA"
-                            WHERE udAirport = '{evidence["airport"]}'
-                            AND udRegis = '{evidence["regis"]}'
-                        """)
-
-    print_c("Verify PPR on the treated data...")
-    ppr_in_db = query("SELECT udAirport, udRegis, udTime FROM UNTREATED_DATA WHERE udSource = 'PPR';").fetchall()
-    for ppr in ppr_in_db:
-        query(f"""
-                UPDATE \"TREATED_DATA\"
-                SET tdProb = '1' 
-                WHERE tdAirport = '{ppr[0]}'
-                AND tdAirplane = '{ppr[1]}'
-                AND tdTime > '{ppr[2] - PPR_DELTA_TIME * 60 * 60}'
-                AND tdTime < '{ppr[2] + PPR_DELTA_TIME * 60 * 60}';
-            """)
+                query(f"""
+                        DELETE FROM "UNTREATED_DATA"
+                        WHERE udAirport = '{evidence["airport"]}'
+                        AND udRegis = '{evidence["regis"]}'
+                        AND tdTime BETWEEN '{evidence["time"] - DELAY_BETWEEN_LANDINGS * 60 *60}'
+                                    AND '{evidence["time"] + DELAY_BETWEEN_LANDINGS * 60 *60}';
+                    """)
 
 
     print_c("Adding and treating the new AFTN messages...")
@@ -605,47 +632,63 @@ while True:
     # here, when an airplane appears two times, but not at the same airport
     # we will keep the most probable one. If there isn't a most probable
     # one we will keep them all
-    all_landings = query("SELECT * FROM \"TREATED_DATA\" WHERE 1;")
-    for landing in all_landings:
-        landing_id = landing[0]         # get the id
-        airplane_name = landing[2]      # get the registration
-        max_prob = landing[4]           # get the probability
-        most_prob_landing = landing_id
-        prob_changed = False
-
+    all_landings = query("SELECT DISTINCT tdAirplane FROM \"TREATED_DATA\" WHERE 1;")
+    for airplane_name in push_id(all_landings.fetchall()):
         same_airplanes = query(f"""
                                     SELECT * 
                                     FROM \"TREATED_DATA\" 
-                                    WHERE tdAirplane = '{airplane_name}'
-                                    AND tdId != '{landing_id}'
-                                """)
-        if not isinstance(same_airplanes, type(None)):
-            same_airplanes = same_airplanes.fetchall()
+                                    WHERE tdAirplane = '{airplane_name}';
+                                """).fetchall()
+        if len(same_airplanes) > 1:
+            same_time_landing = [[same_airplanes[0]]]
+            for landing in same_airplanes[1:]:
+                added = False
+                for same_landings in same_time_landing:
+                    mean_time = 0
+                    for tmp_landing in same_landings:
+                        mean_time += tmp_landing[3]
+                    mean_time /= len(same_landings)
 
-            for airplane in same_airplanes:
-                if airplane[4] > max_prob:
-                    max_prob = airplane[4]
-                    most_prob_landing = airplane[0]
-                    prob_changed = True
-            if prob_changed:
-                delta_landing = DELAY_BETWEEN_LANDINGS * 60 * 60
-                landing_time = query(f"""
-                                        SELECT tdTime 
-                                        FROM \"TREATED_DATA\" 
-                                        WHERE tdId = '{most_prob_landing}';
-                                    """).fetchone()[0]
-
+                    if abs(landing[3] - mean_time) < DELAY_BETWEEN_LANDINGS * 60 * 60:
+                        added = True
+                        same_landings.append(landing)
+                if not added:
+                    same_time_landing.append([landing])
+            
+            new_landing = {}
+            for group in same_time_landing:
+                most_prob_landings = [group[0]]
+                for landing in group[1:]:
+                    if isclose(landing[4], most_prob_landings[0][4]):
+                        most_prob_landings.append(landing)
+                    elif landing[4] > most_prob_landings[0][4]:
+                        most_prob_landings = [landing]
+                mean_time = 0
+                for landing in most_prob_landings:
+                    mean_time += landing[3]
+                mean_time /= len(most_prob_landings)
+                new_landing[mean_time] = most_prob_landings
+            
+            for landing_time in new_landing:
                 query(f"""
-                        DELETE FROM \"TREATED_DATA\"
-                        WHERE tdId != '{most_prob_landing}'
-                        AND tdAirplane = '{airplane_name}'
-                        AND ABS(tdTime - '{landing_time}') <= '{delta_landing}';
+                        DELETE FROM TREATED_DATA
+                        WHERE tdAirplane = '{airplane_name}'
+                        AND tdTime BETWEEN '{landing_time - DELAY_BETWEEN_LANDINGS * 60 *60}'
+                                        AND '{landing_time + DELAY_BETWEEN_LANDINGS * 60 *60}';
                     """)
+            for landing in new_landing.values():
+                landing = landing[0]
+                query(f"""
+                        INSERT INTO "TREATED_DATA"
+                        (tdAirport, tdAirplane, tdTime, tdProb, tdSent)
+                        VALUES ('{landing[1]}', '{landing[2]}', '{landing[3]}', '{landing[4]}', '0');
+                    """)
+
     conn.close()
 
     # here we call the program that sends the landings to the API
     print_c("Sending data to the AVDB API...")
-    os.system(f"python3 {SEND_LANDING_PROGRAM}")
+    # os.system(f"python3 {SEND_LANDING_PROGRAM}")
 
     print_c("end of the routine")
     time.sleep(CYCLE_TIME)
