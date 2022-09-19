@@ -5,6 +5,10 @@ coordinate, altitude, velocity and heading) could have landed
 
 import math
 from math import pi
+from geographiclib.geodesic import Geodesic
+
+
+airplane = {"coords":(47.67161846981954,9.511941139074311), "altitude":500, "velocity": 40, "heading":0}
 
 
 # used to determine the radius of the small (inner) circle
@@ -59,7 +63,7 @@ tuple
     # get the points of the big circle
     # the last parameter is how much the circle is going to take on a
     # complete circle
-    big_circle = points_in_circumference(big_radius, coords_plane, all_angle_bc, big_radius_angle/360)
+    big_circle = points_in_circumference(big_radius*1000, coords_plane, all_angle_bc)
     big_circle = [item for index, item in enumerate(big_circle) if index%30==0 or index==len(big_circle)-1]
 
     # get the angle range of the small circle
@@ -76,13 +80,13 @@ tuple
     # Because the small circle is cut on the angle of the big circle,
     # the last parameter is 1 - x, where x is how much the big circle
     # covers on a complete circle
-    small_circle = points_in_circumference(small_radius, coords_plane, all_angle_sc, 1-(big_radius_angle/360))
+    small_circle = points_in_circumference(small_radius*1000, coords_plane, all_angle_sc)
     small_circle = [item for index, item in enumerate(small_circle) if index%30==0]
     small_circle = small_circle[1:]
 
     return (tuple(small_circle) + tuple(big_circle))
 
-def points_in_circumference(r: float, coords: tuple, n: list, total: float) -> list:
+def points_in_circumference(radius: float, coords: tuple, end_point_angle: list) -> list:
     """
 Creates the circumference points of a circle, from an origin point 
 (the airplane coordinates, here coords), the distance (here r) and the
@@ -107,17 +111,12 @@ Returns
 list
     List of coordinates of the circle
     """
-    # get the distance by latitude and longitude
-    rlat = abs(km_to_lat_long(r, True))
-    rlon = abs(km_to_lat_long(r, False, rlat))
+    new_coords = []
+    geod = Geodesic.WGS84
 
-    new_coords = [(math.sin(2*pi/len(n)*x*total)*rlon*150,
-                    math.cos(2*pi/len(n)*x*total)*rlat*150)
-                    for x in n]
-    new_coords = [(km_to_lat_long(item[1], False, 
-                        km_to_lat_long(item[0], True)) + coords[0],
-                    km_to_lat_long(item[0], True) + coords[1])
-                    for item in new_coords]
+    for angle in end_point_angle:
+        point = geod.Direct(coords[0], coords[1], angle, radius)
+        new_coords.append((point["lat2"], point["lon2"]))
 
     return new_coords
 
